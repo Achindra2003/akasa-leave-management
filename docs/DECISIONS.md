@@ -79,7 +79,8 @@ Format: **Context → Options → Decision → Why → Trade-off accepted**
 
 **Context.** Render's container filesystem is **ephemeral**: files written to disk disappear on every redeploy or restart.
 **Options.** Local disk (breaks on Render) · S3/Supabase Storage (an extra service and credentials) · **Postgres `bytea` behind a storage interface**.
-**Decision.** Store attachments in Postgres (`attachments.content`), with a 5 MB cap and only PDF/PNG/JPG allowed. Access goes through a `StorageBackend` interface, so moving to S3 later means a new class, not a rewrite.
+**Decision.** Store attachments in Postgres (`attachments.content`, a deferred column so lists never load blobs), with a 5 MB cap enforced while streaming the upload, and only PDF/PNG/JPG allowed.
+**Status (post-build):** the planned `StorageBackend` interface was *not* built in the time box. Blob reads and writes are confined to two call sites in `LeaveService`, so extracting the interface later is a small refactor.
 **Why.** There's no extra infrastructure, it works the same locally and on Render, and the attachment commits in the same transaction as the request, so you can't end up with a request missing its document or a document with no request.
 **Trade-off.** Putting blobs in the database doesn't scale to large volumes. That's fine for medical certificates at demo scale, and the interface makes the migration path explicit.
 
@@ -164,3 +165,21 @@ Influenced by the author's earlier projects (Helix: provider abstraction with a 
 - GitHub Actions: lint, type-check, tests with a Postgres service, frontend build, Docker build
 - Multi-stage Dockerfile, non-root, `HEALTHCHECK`; FastAPI serves the built SPA (one image, one port) · `docker-compose.yml` with healthy `depends_on` · **`render.yaml` Blueprint** (deployment as code)
 **Dropped:** the SQLite fallback. It can't enforce the overlap constraint, and we won't ship a mode that's less correct. Docker is the run path.
+
+## D-014 — Packaging & runtime
+
+**Decision.** One Docker image: a Node stage builds the SPA, a `uv` stage installs the **locked** Python deps, and a slim, **non-root** runtime has a `HEALTHCHECK`. FastAPI serves the SPA from the same origin (one port, no CORS in production, no separate web server). The entrypoint runs `alembic upgrade head` and then starts uvicorn.
+**Why.** "Give us an executable" becomes a single `docker compose up`. Same-origin removes a whole class of CORS and cookie problems.
+**Trade-off.** Running migrations on startup is fine for one instance. With several replicas they should be a separate release step (Render `preDeployCommand`) so instances don't race.
+**Verified:** a fresh volume runs the migration, seeds the data, starts the Postgres checkpointer and reports healthy, and the E2E passes against the container.
+
+## D-015 — Frontend direction ("ops desk at dawn")
+
+Applied with the `interface-design` skill (D-011):
+- **Signature:** a request is a *ticket*. Dates are set like a departure board (`16 DEC → 20 DEC`, JetBrains Mono) and the approval chain is drawn as **legs on a route** that light up as each approver clears it. It suits an airline and makes "where is my leave stuck?" obvious at a glance.
+- **Palette:** night-sky ink for structure, cloud surfaces, and one accent (sunrise orange) reserved for primary actions. Status colours follow runway/ATC-light semantics and **always come with an icon and a label**.
+- **Rejected defaults:** sidebar plus KPI-card grid → top bar with role-aware tabs; generic data table → ticket rows (except the audit log, where a dense table *is* the right tool); Inter → Manrope.
+- **Server-driven affordances:** the API returns `allowedActions` for the viewer, so the UI never shows a button that would fail.
+
+## D-016 — Things deliberately *not* done (time box)
+`mypy` is configured but not yet clean (about 20 typing errors, mostly LangGraph generics), so it isn't a CI gate. There's no frontend unit tests (the E2E covers the critical paths instead). There's no rate limiting on `/auth/login` and no refresh tokens (sessions use an 8-hour JWT in `sessionStorage`). All of these are listed so a reviewer doesn't have to find them.
