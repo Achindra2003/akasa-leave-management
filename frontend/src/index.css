@@ -1,0 +1,86 @@
+@import "@fontsource-variable/manrope";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/600.css";
+@import "tailwindcss";
+
+/*
+  Direction: an airline ops desk at dawn. Night-sky ink for structure, cloud surfaces,
+  one sunrise accent reserved for primary actions. Status colours are runway/ATC lights and
+  ALWAYS come with a label + icon (never colour alone).
+  Depth: subtle layered shadows on light surfaces (approachable), borders only for inputs.
+  Type: Manrope (UI) on a 1.25 scale from 14px; JetBrains Mono for dates/IDs (departure board).
+  Spacing: 4px base. Density: workbench-tight lists (12px), airy forms (20-24px).
+*/
+@theme {
+  --font-sans: "Manrope Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* ink = night sky, used for text + structure */
+  --color-ink: #14123a;
+  --color-ink-2: #4a4870;
+  --color-ink-3: #7c7a9c;
+  --color-ink-4: #b3b1c9;
+
+  /* surfaces: cloud layers */
+  --color-sky: #f5f4fa;      /* canvas */
+  --color-cloud: #ffffff;    /* cards */
+  --color-haze: #eeedf6;     /* insets, inputs, hover */
+  --color-rule: rgb(20 18 58 / 0.09);
+  --color-rule-strong: rgb(20 18 58 / 0.16);
+
+  /* the one accent: sunrise */
+  --color-sunrise: #f36b21;
+  --color-sunrise-deep: #d9560f;
+  --color-sunrise-wash: #fff1e8;
+
+  /* status lights */
+  --color-amber: #b45309;   --color-amber-wash: #fef3c7;   /* awaiting manager */
+  --color-violet: #6d28d9;  --color-violet-wash: #ede9fe;  /* awaiting HOD */
+  --color-sky-blue: #0369a1; --color-sky-wash: #e0f2fe;    /* info requested */
+  --color-cleared: #15803d; --color-cleared-wash: #dcfce7; /* approved */
+  --color-hold: #b91c1c;    --color-hold-wash: #fee2e2;    /* rejected */
+  --color-parked: #64748b;  --color-parked-wash: #f1f5f9;  /* cancelled */
+
+  --radius-control: 8px;
+  --radius-card: 14px;
+  --radius-sheet: 20px;
+
+  --shadow-lift: 0 0 0 1px rgb(20 18 58 / 0.06), 0 1px 2px -1px rgb(20 18 58 / 0.06),
+    0 2px 6px rgb(20 18 58 / 0.04);
+  --shadow-float: 0 0 0 1px rgb(20 18 58 / 0.06), 0 8px 24px -6px rgb(20 18 58 / 0.18);
+
+  --ease-out-quint: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+body {
+  @apply bg-sky text-ink font-sans text-[14px] leading-normal;
+}
+h1, h2, h3 { text-wrap: balance; letter-spacing: -0.015em; }
+p { text-wrap: pretty; }
+.tnum { font-variant-numeric: tabular-nums; }
+
+/* inputs are inset: slightly darker than the card */
+.field {
+  @apply w-full rounded-[var(--radius-control)] border border-rule-strong bg-haze/60 px-3 py-2.5
+    text-ink placeholder:text-ink-4 outline-none transition-[border-color,box-shadow]
+    duration-150 focus:border-sunrise focus:bg-cloud focus:ring-3 focus:ring-sunrise/15;
+  font-size: 16px; /* >=16px prevents iOS zoom-on-focus */
+}
+@media (min-width: 640px) { .field { font-size: 14px; } }
+.field[aria-invalid="true"] { @apply border-hold ring-3 ring-hold/10; }
+
+.press { transition: transform 120ms var(--ease-out-quint); }
+.press:active:not(:disabled) { transform: scale(0.97); }
+
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.rise { animation: rise 260ms var(--ease-out-quint) both; }
+@keyframes sheet-in { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .rise, .press { animation: none !important; transition: none !important; }
+}

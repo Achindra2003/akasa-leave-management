@@ -35,3 +35,5 @@ uploads/
 Thumbs.db
 .vscode/
 .idea/
+frontend/openapi.json
+docs/screenshots/failure.png
