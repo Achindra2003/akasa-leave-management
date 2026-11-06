@@ -1,13 +1,12 @@
 import { Inbox } from 'lucide-react'
-import { useState } from 'react'
 import { useHistory, usePending } from '../api/hooks'
 import { LeaveRow } from '../components/leave'
-import { RequestSheet } from '../components/RequestSheet'
+import { useOpenRequest, useUrlState } from '../lib/useUrlState'
 import { Card, Empty, ErrorNote, Skeleton } from '../components/ui'
 
 export default function Approvals() {
-  const [tab, setTab] = useState<'pending' | 'history'>('pending')
-  const [open, setOpen] = useState<number | null>(null)
+  const [tab, setTab] = useUrlState<'pending' | 'history'>('tab', 'pending')
+  const [, setOpen] = useOpenRequest()
   const pending = usePending()
   const history = useHistory()
   const q = tab === 'pending' ? pending : history
@@ -46,7 +45,6 @@ export default function Approvals() {
           <div className="divide-y divide-rule">{q.data.map((l) => <LeaveRow key={l.id} leave={l} showEmployee onOpen={() => setOpen(l.id)} />)}</div>
         )}
       </Card>
-      <RequestSheet id={open} onClose={() => setOpen(null)} />
     </div>
   )
 }

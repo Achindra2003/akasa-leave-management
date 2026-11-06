@@ -135,13 +135,13 @@ function Form({ policy, prefill, onSubmitted }: { policy: Policy; prefill?: Pref
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <Label>From</Label>
-          <input type="date" min={todayISO()} className="field font-mono" aria-invalid={!!errors.fromDate} aria-describedby="from-err" {...register('fromDate')} />
+          <Label htmlFor="fromDate">From</Label>
+          <input id="fromDate" type="date" min={todayISO()} className="field font-mono" aria-invalid={!!errors.fromDate} aria-describedby="from-err" {...register('fromDate')} />
           <FieldError id="from-err">{errors.fromDate?.message}</FieldError>
         </div>
         <div>
-          <Label>To</Label>
-          <input type="date" min={from || todayISO()} className="field font-mono" aria-invalid={!!errors.toDate} aria-describedby="to-err" {...register('toDate')} />
+          <Label htmlFor="toDate">To</Label>
+          <input id="toDate" type="date" min={from || todayISO()} className="field font-mono" aria-invalid={!!errors.toDate} aria-describedby="to-err" {...register('toDate')} />
           <FieldError id="to-err">{errors.toDate?.message}</FieldError>
         </div>
       </div>
@@ -163,8 +163,8 @@ function Form({ policy, prefill, onSubmitted }: { policy: Policy; prefill?: Pref
       )}
 
       <div className="mt-4">
-        <Label hint={`${watch('reason')?.length ?? 0}/500`}>Reason</Label>
-        <textarea rows={3} className="field resize-y" placeholder="e.g. Family wedding in Jaipur" aria-invalid={!!errors.reason} aria-describedby="reason-err" {...register('reason')} />
+        <Label htmlFor="reason" hint={`${watch('reason')?.length ?? 0}/500`}>Reason</Label>
+        <textarea id="reason" rows={3} className="field resize-y" placeholder="e.g. Family wedding in Jaipur…" aria-invalid={!!errors.reason} aria-describedby="reason-err" {...register('reason')} />
         <FieldError id="reason-err">{errors.reason?.message}</FieldError>
       </div>
 

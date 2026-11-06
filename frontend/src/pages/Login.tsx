@@ -35,7 +35,7 @@ export default function Login() {
       <aside className="relative hidden overflow-hidden bg-ink p-12 text-white lg:flex lg:flex-col lg:justify-between">
         <div className="flex items-center gap-2 text-[15px] font-bold"><Plane className="size-5 text-sunrise" /> Akasa Leave</div>
         <div>
-          <h1 className="max-w-md text-[44px] leading-[1.05] font-bold">Time off, cleared for departure.</h1>
+          <p className="max-w-md text-[44px] leading-[1.05] font-bold">Time off, cleared for departure.</p>
           <p className="mt-4 max-w-md text-[15px] text-white/70">
             Apply in seconds, track every approval leg, and give managers the context they need to keep the roster flying.
           </p>
@@ -62,7 +62,7 @@ export default function Login() {
       <main className="flex items-center justify-center p-5 sm:p-10">
         <div className="w-full max-w-[420px]">
           <div className="mb-8 flex items-center gap-2 text-[15px] font-bold lg:hidden"><Plane className="size-5 text-sunrise" /> Akasa Leave</div>
-          <h2 className="text-[22px] font-bold">Sign in</h2>
+          <h1 className="text-[22px] font-bold">Sign in</h1>
           <p className="mt-1 text-[13px] text-ink-3">Use a demo account below or your credentials.</p>
 
           {demo.data && (
@@ -91,17 +91,17 @@ export default function Login() {
             </ul>
           )}
 
-          <form className="mt-8 space-y-3" onSubmit={(e) => { e.preventDefault(); go(email, password) }}>
+          <form className="mt-8 space-y-3" noValidate onSubmit={(e) => { e.preventDefault(); if (!email || !password) { setErr('Enter your email and password, or pick a demo account above.'); return } go(email, password) }}>
             <div>
-              <Label>Email</Label>
-              <input className="field" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} />
+              <Label htmlFor="email">Email</Label>
+              <input id="email" name="email" className="field" type="email" autoComplete="username" spellCheck={false} value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
             <div>
-              <Label>Password</Label>
-              <input className="field" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+              <Label htmlFor="password">Password</Label>
+              <input id="password" name="password" className="field" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
             </div>
             <FieldError id="login-err">{err}</FieldError>
-            <Button type="submit" variant="primary" className="w-full" loading={busy === email} disabled={!email || !password}>Sign in</Button>
+            <Button type="submit" variant="primary" className="w-full" loading={busy === email}>Sign in</Button>
           </form>
         </div>
       </main>

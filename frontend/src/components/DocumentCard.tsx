@@ -122,7 +122,7 @@ function DocumentItem({ att, reviewer }: { att: Att; reviewer: boolean }) {
                 <textarea
                   autoFocus
                   className="field min-h-[64px] text-[13px]"
-                  placeholder="What's wrong with this document? (shown to the employee)"
+                  placeholder="What's wrong with it? Shown to the employee…"
                   value={note}
                   aria-invalid={!!err}
                   onChange={(e) => { setNote(e.target.value); setErr(undefined) }}

@@ -63,6 +63,7 @@ export function Assistant({ onPrefill }: { onPrefill: (p: Prefill) => void }) {
       <button
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
+        aria-label={open ? 'Close leave assistant' : 'Open leave assistant'}
         className="press fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-30 flex h-12 items-center gap-2 rounded-full bg-ink px-5 font-semibold text-white shadow-float hover:bg-ink/90"
       >
         {open ? <ChevronDown className="size-5" /> : <Sparkles className="size-5 text-sunrise" />}
@@ -115,7 +116,7 @@ export function Assistant({ onPrefill }: { onPrefill: (p: Prefill) => void }) {
           </div>
 
           <form onSubmit={(e) => { e.preventDefault(); send(input) }} className="flex items-center gap-2 border-t border-rule p-3">
-            <input className="field" value={input} maxLength={1000} placeholder="e.g. Friday off for a family function" onChange={(e) => setInput(e.target.value)} aria-label="Message" />
+            <input className="field" value={input} maxLength={1000} placeholder="e.g. Friday off for a family function…" onChange={(e) => setInput(e.target.value)} aria-label="Message" />
             <button type="submit" disabled={!input.trim() || busy} aria-label="Send" className="press grid size-10 shrink-0 place-items-center rounded-full bg-sunrise-deep text-white disabled:opacity-40">
               <ArrowUp className="size-5" />
             </button>

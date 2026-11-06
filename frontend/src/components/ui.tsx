@@ -1,6 +1,6 @@
 import clsx from 'clsx'
 import { Loader2 } from 'lucide-react'
-import type { ButtonHTMLAttributes, ReactNode } from 'react'
+import { useEffect, useState, type ButtonHTMLAttributes, type ReactNode } from 'react'
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success'
 const VARIANTS: Record<Variant, string> = {
@@ -46,10 +46,10 @@ export function Card({ className, children }: { className?: string; children: Re
   return <div className={clsx('rounded-[var(--radius-card)] bg-cloud shadow-lift', className)}>{children}</div>
 }
 
-export function Label({ children, hint }: { children: ReactNode; hint?: ReactNode }) {
+export function Label({ children, hint, htmlFor }: { children: ReactNode; hint?: ReactNode; htmlFor?: string }) {
   return (
     <div className="mb-1.5 flex items-baseline justify-between gap-2">
-      <span className="text-[12px] font-semibold tracking-wide text-ink-2 uppercase">{children}</span>
+      <label htmlFor={htmlFor} className="text-[12px] font-semibold tracking-wide text-ink-2 uppercase">{children}</label>
       {hint && <span className="text-[12px] text-ink-3">{hint}</span>}
     </div>
   )
@@ -94,5 +94,45 @@ export function ErrorNote({ error }: { error: unknown }) {
     <div role="alert" className="m-4 rounded-[var(--radius-control)] bg-hold-wash px-4 py-3 text-[13px] text-hold">
       {msg}
     </div>
+  )
+}
+
+/** Destructive action with an inline second click to confirm (auto-resets after 4s). */
+export function ConfirmButton({
+  onConfirm,
+  label,
+  confirmLabel,
+  loading,
+  className,
+  variant = 'ghost',
+  ariaLabel,
+  children,
+}: {
+  onConfirm: () => void
+  label?: ReactNode
+  confirmLabel: string
+  loading?: boolean
+  className?: string
+  variant?: Variant
+  ariaLabel?: string
+  children?: ReactNode
+}) {
+  const [armed, setArmed] = useState(false)
+  useEffect(() => {
+    if (!armed) return
+    const t = setTimeout(() => setArmed(false), 4000)
+    return () => clearTimeout(t)
+  }, [armed])
+  return (
+    <Button
+      size="sm"
+      variant={armed ? 'danger' : variant}
+      loading={loading}
+      aria-label={armed ? confirmLabel : ariaLabel}
+      className={clsx(armed && 'ring-2 ring-hold/40', className)}
+      onClick={() => (armed ? (setArmed(false), onConfirm()) : setArmed(true))}
+    >
+      <span aria-live="polite">{armed ? confirmLabel : (label ?? children)}</span>
+    </Button>
   )
 }

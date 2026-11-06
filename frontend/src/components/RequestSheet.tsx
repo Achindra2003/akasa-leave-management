@@ -8,7 +8,7 @@ import { CoverageStrip } from './CoverageStrip'
 import { DocumentsSection } from './DocumentCard'
 import { useAuth } from '../auth'
 import { ApprovalLegs, DateRoute, StatusBadge } from './leave'
-import { Button, ErrorNote, FieldError, Label } from './ui'
+import { Button, ConfirmButton, ErrorNote, FieldError, Label } from './ui'
 
 const ACTION_COPY: Record<Action, { label: string; variant: 'primary' | 'danger' | 'secondary' | 'success'; needsComment: boolean; placeholder: string }> = {
   APPROVE: { label: 'Approve', variant: 'success', needsComment: false, placeholder: 'Optional note for the employee' },
@@ -137,8 +137,8 @@ function ActionPanel({ leave, onDone }: { leave: LeaveDetail; onDone: (a: Action
       </h3>
       {primary.length > 0 && (
         <>
-          <Label hint="Shown to the employee">Comment</Label>
-          <textarea
+          <Label htmlFor="action-comment" hint="Shown to the employee">Comment</Label>
+          <textarea id="action-comment"
             className="field min-h-[84px] resize-y"
             value={comment}
             maxLength={1000}
@@ -164,9 +164,7 @@ function ActionPanel({ leave, onDone }: { leave: LeaveDetail; onDone: (a: Action
           </Button>
         ))}
         {leave.allowedActions.includes('CANCEL') && (
-          <Button variant="ghost" className="ml-auto text-hold hover:bg-hold-wash hover:text-hold" loading={mutate.isPending && mutate.variables?.action === 'CANCEL'} onClick={() => run('CANCEL')}>
-            Withdraw
-          </Button>
+          <ConfirmButton className="ml-auto text-hold hover:bg-hold-wash hover:text-hold" label="Withdraw" confirmLabel="Withdraw this request?" loading={mutate.isPending && mutate.variables?.action === 'CANCEL'} onConfirm={() => run('CANCEL')} />
         )}
       </div>
     </section>

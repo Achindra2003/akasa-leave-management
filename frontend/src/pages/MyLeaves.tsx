@@ -1,11 +1,11 @@
 import { CalendarDays } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { useOutletContext } from 'react-router'
 import type { LeaveStatus } from '../api/client'
 import { useMyLeaves } from '../api/hooks'
 import { ApplyForm } from '../components/ApplyForm'
 import { LeaveRow, STATUS } from '../components/leave'
-import { RequestSheet } from '../components/RequestSheet'
+import { useOpenRequest, useUrlState } from '../lib/useUrlState'
 import { Card, Empty, ErrorNote, Skeleton } from '../components/ui'
 import type { ShellCtx } from './Shell'
 
@@ -15,8 +15,8 @@ const OPEN: LeaveStatus[] = ['PENDING_MANAGER', 'PENDING_HOD', 'INFO_REQUESTED']
 export default function MyLeaves() {
   const { prefill } = useOutletContext<ShellCtx>()
   const q = useMyLeaves()
-  const [open, setOpen] = useState<number | null>(null)
-  const [filter, setFilter] = useState<(typeof FILTERS)[number]>('ALL')
+  const [, setOpen] = useOpenRequest()
+  const [filter, setFilter] = useUrlState<(typeof FILTERS)[number]>('filter', 'ALL')
 
   const items = useMemo(() => {
     const all = q.data ?? []
@@ -58,7 +58,6 @@ export default function MyLeaves() {
           )}
         </Card>
       </div>
-      <RequestSheet id={open} onClose={() => setOpen(null)} />
     </div>
   )
 }

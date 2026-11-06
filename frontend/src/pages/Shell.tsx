@@ -8,6 +8,7 @@ import type { Prefill } from '../components/ApplyForm'
 import { Assistant } from '../components/Assistant'
 import { AccountMenu, NotificationBell } from '../components/HeaderMenus'
 import { RequestSheet } from '../components/RequestSheet'
+import { useOpenRequest } from '../lib/useUrlState'
 
 export type ShellCtx = { prefill: Prefill | null }
 
@@ -15,7 +16,7 @@ export default function Shell() {
   const { user, logout } = useAuth()
   const nav = useNavigate()
   const [prefill, setPrefill] = useState<Prefill | null>(null)
-  const [openId, setOpenId] = useState<number | null>(null)
+  const [openId, setOpenId] = useOpenRequest()
   const pending = usePending(!!user?.isApprover)
   if (!user) return null
 
@@ -28,6 +29,7 @@ export default function Shell() {
 
   return (
     <div className="min-h-dvh pb-24">
+      <a href="#main" className="sr-only z-50 rounded-[var(--radius-control)] bg-ink px-4 py-2 font-semibold text-white focus:not-sr-only focus:fixed focus:top-3 focus:left-3">Skip to content</a>
       <header className="sticky top-0 z-20 border-b border-rule bg-sky/85 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-3 sm:gap-4 sm:px-6">
           <div className="flex items-center gap-2 font-bold"><Plane className="size-5 text-sunrise" aria-hidden /><span className="hidden md:inline">Akasa Leave</span></div>
@@ -44,7 +46,7 @@ export default function Shell() {
           <AccountMenu onSignOut={() => { logout(); nav('/login') }} />
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
+      <main id="main" tabIndex={-1} className="mx-auto max-w-6xl outline-none px-4 py-6 sm:px-6 sm:py-8">
         <Outlet context={{ prefill } satisfies ShellCtx} />
       </main>
       <Assistant onPrefill={(p) => { setPrefill({ ...p }); nav('/') }} />

@@ -5,15 +5,15 @@ import type { LeaveStatus } from '../api/client'
 import { useAllRequests, useAudit, useStats } from '../api/hooks'
 import { LeaveRow, STATUS } from '../components/leave'
 import { BlackoutsPanel } from '../components/BlackoutsPanel'
-import { RequestSheet } from '../components/RequestSheet'
+import { useOpenRequest, useUrlState } from '../lib/useUrlState'
 import { Card, Empty, ErrorNote, Skeleton } from '../components/ui'
 
 const ORDER: LeaveStatus[] = ['PENDING_MANAGER', 'PENDING_HOD', 'INFO_REQUESTED', 'APPROVED', 'REJECTED', 'CANCELLED']
 
 export default function Admin() {
   const [status, setStatus] = useState<LeaveStatus | undefined>()
-  const [tab, setTab] = useState<'requests' | 'audit' | 'blackouts'>('requests')
-  const [open, setOpen] = useState<number | null>(null)
+  const [tab, setTab] = useUrlState<'requests' | 'audit' | 'blackouts'>('tab', 'requests')
+  const [, setOpen] = useOpenRequest()
   const stats = useStats()
   const reqs = useAllRequests(status)
   const audit = useAudit()
@@ -91,7 +91,6 @@ export default function Admin() {
           </div>
         )}
       </Card>
-      <RequestSheet id={open} onClose={() => setOpen(null)} />
     </div>
   )
 }

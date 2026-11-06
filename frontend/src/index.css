@@ -59,6 +59,7 @@ html {
   scrollbar-color: var(--color-ink-4) transparent;
   scrollbar-width: thin;
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 body {
   @apply bg-sky text-ink font-sans text-[14px] leading-normal;
