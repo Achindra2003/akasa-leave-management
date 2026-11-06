@@ -6,6 +6,7 @@ services:
     name: akasa-leave
     runtime: docker
     plan: free
+    region: singapore   # closest Render region to Supabase Mumbai (ap-south-1), ~60ms vs ~220ms
     dockerfilePath: ./Dockerfile
     healthCheckPath: /ready
     autoDeploy: true
