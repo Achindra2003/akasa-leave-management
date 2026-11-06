@@ -15,23 +15,19 @@ export default function Approvals() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-[28px] font-bold">Approvals</h1>
-          <p className="text-[13px] text-ink-3">Requests waiting on your decision. Oldest first.</p>
-        </div>
-        <div className="flex items-end gap-6">
-          <div className="text-right">
-            <div className="font-mono text-[32px] leading-none font-semibold tnum text-ink">{pending.data?.length ?? '–'}</div>
-            <div className="mt-1 text-[11px] font-semibold tracking-wide text-ink-3 uppercase">waiting on you</div>
-          </div>
-          {longCount > 0 && (
-            <div className="text-right">
-              <div className="font-mono text-[20px] leading-none font-semibold tnum text-violet">{longCount}</div>
-              <div className="mt-1 text-[11px] font-semibold tracking-wide text-ink-3 uppercase">&gt;3 days</div>
-            </div>
-          )}
-        </div>
+      <div>
+        <h1 className="text-[28px] font-bold">Approvals</h1>
+        {/* One plain sentence instead of a big-number metric block. */}
+        <p className="mt-1 text-[14px] text-ink-2" aria-live="polite">
+          {pending.isLoading
+            ? 'Checking your queue…'
+            : !pending.data?.length
+              ? 'Nothing is waiting on you.'
+              : <>
+                  <b className="text-ink tnum">{pending.data.length}</b> {pending.data.length === 1 ? 'request is' : 'requests are'} waiting on you, oldest first
+                  {longCount > 0 && <>, <b className="text-violet tnum">{longCount}</b> longer than 3 days</>}.
+                </>}
+        </p>
       </div>
       <Card>
         <div className="flex gap-1 border-b border-rule px-4 py-3" role="tablist">
