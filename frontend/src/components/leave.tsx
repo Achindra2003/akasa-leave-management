@@ -106,7 +106,7 @@ export function ApprovalLegs({ leave }: { leave: LeaveDetail }) {
         return (
           <li key={s.level} className="flex items-center gap-1">
             <span className="mx-1 h-px w-5 bg-rule-strong sm:w-8" aria-hidden />
-            <span className={clsx('grid size-6 place-items-center rounded-full text-[11px] font-bold', tone)}>
+            <span key={s.decision} className={clsx('settle grid size-6 place-items-center rounded-full text-[11px] font-bold', tone)}>
               {s.level}
             </span>
             <span className="ml-1 text-[13px] leading-tight">

@@ -68,7 +68,7 @@ function SheetBody({ id, onClose }: { id: number; onClose: () => void }) {
                   <div className="text-[16px] font-bold text-ink">{d.employeeName}</div>
                   <div className="text-[13px] text-ink-3">{d.department}</div>
                 </div>
-                <StatusBadge status={d.status} />
+                <StatusBadge key={d.status} status={d.status} className="settle" />
               </div>
               <DateRoute from={d.fromDate} to={d.toDate} size="lg" />
               <div className="mt-3 flex gap-4 text-[13px] text-ink-2">

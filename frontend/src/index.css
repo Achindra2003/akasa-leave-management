@@ -124,3 +124,13 @@ button, [role="button"], [role="tab"], label[for] {
 /* Horizontal scrollers (coverage strip, team calendar, tabs): keep the swipe inside the
    strip instead of triggering browser back/forward navigation. */
 .scroll-x { overflow-x: auto; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; }
+
+/* State lands: a status/verification/leg change settles in instead of snapping (re-keyed
+   elements only, so it plays when the value changes, never on every render). */
+@keyframes settle { from { opacity: 0; transform: scale(0.96); filter: blur(2px); } to { opacity: 1; transform: none; filter: none; } }
+.settle { animation: settle 200ms var(--ease-out-quint) both; }
+@keyframes bump { from { transform: scale(0.8); } to { transform: none; } }
+.bump { animation: bump 180ms var(--ease-out-quint) both; }
+@media (prefers-reduced-motion: reduce) {
+  .settle, .bump { animation: fade-in 150ms ease both; }
+}

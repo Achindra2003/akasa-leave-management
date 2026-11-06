@@ -1,4 +1,5 @@
 import clsx from 'clsx'
+import { useEffect, useState } from 'react'
 import { AlertTriangle, CalendarRange, Users } from 'lucide-react'
 import type { Coverage, CoverageDay } from '../api/client'
 
@@ -25,6 +26,12 @@ export function CoverageStrip({
   to: string
   blackout?: { fromDate: string; toDate: string } | null
 }) {
+  // Cascade once when the strip first appears; never replay while the user edits dates.
+  const [cascade, setCascade] = useState(true)
+  useEffect(() => {
+    const t = setTimeout(() => setCascade(false), 700)
+    return () => clearTimeout(t)
+  }, [])
   if (!cov.teamSize) return null
   const shortInRange = cov.days.filter((d) => d.short && d.date >= from && d.date <= to)
   return (
@@ -46,7 +53,8 @@ export function CoverageStrip({
               style={{ ['--i' as string]: i }}
               title={`${short(d.date)}: ${d.available}/${cov.teamSize} available${names ? ` - off: ${names}` : ''}`}
               className={clsx(
-                'cell-in relative flex w-9 shrink-0 flex-col items-center rounded-[6px] px-1 pt-1 pb-1.5',
+                cascade && 'cell-in',
+                'relative flex w-9 shrink-0 flex-col items-center rounded-[6px] px-1 pt-1 pb-1.5',
                 t.cell,
                 inRange && 'ring-2 ring-ink ring-offset-1 ring-offset-cloud',
                 d.weekday >= 5 && !inRange && 'opacity-70',

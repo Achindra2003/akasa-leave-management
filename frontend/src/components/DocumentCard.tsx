@@ -80,7 +80,7 @@ function DocumentItem({ att, reviewer }: { att: Att; reviewer: boolean }) {
           <span className="truncate text-[13px] font-semibold text-ink underline decoration-rule-strong underline-offset-2">{att.filename}</span>
           <span className="shrink-0 text-[11px] text-ink-3 tnum">{Math.max(1, Math.round(att.size / 1024))} KB</span>
         </button>
-        <span className={clsx('shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold', human.cls)}>{human.label}</span>
+        <span key={att.verification} className={clsx('settle shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold', human.cls)}>{human.label}</span>
       </div>
 
       {reviewer && (
