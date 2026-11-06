@@ -60,6 +60,7 @@ html {
   scrollbar-width: thin;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;  /* no font inflation in landscape */
 }
 body {
   @apply bg-sky text-ink font-sans text-[14px] leading-normal;
@@ -113,3 +114,13 @@ p { text-wrap: pretty; }
 :focus-visible { outline: 2px solid var(--color-sunrise-deep); outline-offset: 2px; border-radius: 6px; }
 .field:focus-visible { outline: none; } /* fields draw their own ring */
 a { text-underline-offset: 3px; }
+
+/* Controls are not content: no long-press text selection or callout on them. */
+button, [role="button"], [role="tab"], label[for] {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+/* Horizontal scrollers (coverage strip, team calendar, tabs): keep the swipe inside the
+   strip instead of triggering browser back/forward navigation. */
+.scroll-x { overflow-x: auto; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; }

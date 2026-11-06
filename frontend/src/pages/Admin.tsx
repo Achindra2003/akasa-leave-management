@@ -67,7 +67,7 @@ export default function Admin() {
             <div className="divide-y divide-rule">{reqs.data.map((l) => <LeaveRow key={l.id} leave={l} showEmployee onOpen={() => setOpen(l.id)} />)}</div>
           )
         ) : audit.isLoading ? <Skeleton /> : (
-          <div className="overflow-x-auto">
+          <div className="scroll-x">
             <table className="w-full min-w-[640px] text-left text-[13px]">
               <thead className="text-[11px] tracking-wide text-ink-3 uppercase">
                 <tr><th className="px-5 py-2.5 font-semibold">When</th><th className="py-2.5 font-semibold">Actor</th><th className="py-2.5 font-semibold">Action</th><th className="py-2.5 font-semibold">Entity</th><th className="py-2.5 font-semibold">Change</th><th className="px-5 py-2.5 font-semibold">Via</th></tr>

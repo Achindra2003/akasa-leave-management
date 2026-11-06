@@ -57,7 +57,7 @@ function SheetBody({ id, onClose }: { id: number; onClose: () => void }) {
           </button>
         </Dialog.Close>
       </header>
-      <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-6">
+      <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))]">
         {leave.isLoading && <div className="grid h-40 place-items-center"><Loader2 className="size-6 animate-spin text-ink-3" /></div>}
         {leave.error && <ErrorNote error={leave.error} />}
         {d && (

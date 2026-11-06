@@ -94,7 +94,7 @@ export default function Login() {
           <form className="mt-8 space-y-3" noValidate onSubmit={(e) => { e.preventDefault(); if (!email || !password) { setErr('Enter your email and password, or pick a demo account above.'); return } go(email, password) }}>
             <div>
               <Label htmlFor="email">Email</Label>
-              <input id="email" name="email" className="field" type="email" autoComplete="username" spellCheck={false} value={email} onChange={(e) => setEmail(e.target.value)} />
+              <input id="email" name="email" className="field" type="email" autoComplete="username" autoCapitalize="none" inputMode="email" spellCheck={false} value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
             <div>
               <Label htmlFor="password">Password</Label>

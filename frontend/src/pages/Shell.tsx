@@ -30,10 +30,10 @@ export default function Shell() {
   return (
     <div className="min-h-dvh pb-24">
       <a href="#main" className="sr-only z-50 rounded-[var(--radius-control)] bg-ink px-4 py-2 font-semibold text-white focus:not-sr-only focus:fixed focus:top-3 focus:left-3">Skip to content</a>
-      <header className="sticky top-0 z-20 border-b border-rule bg-sky/85 backdrop-blur-md">
+      <header className="sticky top-0 z-20 border-b border-rule bg-sky/85 pt-[env(safe-area-inset-top)] backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-3 sm:gap-4 sm:px-6">
           <div className="flex items-center gap-2 font-bold"><Plane className="size-5 text-sunrise" aria-hidden /><span className="hidden md:inline">Akasa Leave</span></div>
-          <nav className="flex flex-1 gap-1 overflow-x-auto [scrollbar-width:none]" aria-label="Main">
+          <nav className="scroll-x flex flex-1 gap-1 [scrollbar-width:none]" aria-label="Main">
             {tabs.map((t) => (
               <NavLink key={t.to} to={t.to} end
                 className={({ isActive }) => clsx('press flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[13px] font-semibold whitespace-nowrap transition-colors', isActive ? 'bg-ink text-white' : 'text-ink-2 hover:bg-haze hover:text-ink')}>

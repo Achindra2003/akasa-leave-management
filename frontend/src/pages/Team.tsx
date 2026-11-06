@@ -48,7 +48,7 @@ export default function Team() {
         ) : !rows.length ? (
           <Empty icon={<Users className="size-5" />} title="No direct reports">Your team calendar shows people who report to you.</Empty>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="scroll-x">
             <table className="w-full border-separate border-spacing-0 text-[12px]">
               <thead>
                 <tr>

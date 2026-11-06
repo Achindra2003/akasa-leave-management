@@ -30,7 +30,7 @@ export function CoverageStrip({
   return (
     <div>
       <div
-        className="flex gap-1 overflow-x-auto pb-1"
+        className="scroll-x flex gap-1 pb-1"
         role="img"
         aria-label={`Team availability: ${shortInRange.length ? `${shortInRange.length} short-staffed day(s) in your range` : 'fully covered'}`}
       >
