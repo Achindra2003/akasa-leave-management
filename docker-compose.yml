@@ -1,0 +1,36 @@
+# One command to run everything:  docker compose up --build
+# Then open http://localhost:8000  (demo accounts are listed on the login page)
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: leave
+      POSTGRES_PASSWORD: leave
+      POSTGRES_DB: leave
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U leave -d leave"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  app:
+    build: .
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      DATABASE_URL: postgresql+psycopg://leave:leave@db:5432/leave
+      ENVIRONMENT: production
+      LOG_JSON: "true"
+      JWT_SECRET: ${JWT_SECRET:-local-compose-secret-change-me-0123456789}
+      SEED_DEMO_DATA: "true"
+      # AI: leave LLM_API_KEY empty to run the deterministic offline demo model.
+      LLM_PROVIDER: ${LLM_PROVIDER:-fake}
+      LLM_MODEL: ${LLM_MODEL:-openai/gpt-oss-120b}
+      LLM_BASE_URL: ${LLM_BASE_URL:-}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+    ports: ["8000:8000"]
+
+volumes:
+  pgdata:
