@@ -98,7 +98,7 @@ function DocumentItem({ att, reviewer }: { att: Att; reviewer: boolean }) {
                 <span className={clsx("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-semibold", v.cls)}>
                   <v.icon className="size-3.5" aria-hidden /> {v.label}
                 </span>
-                <span className="text-[10px] font-semibold tracking-wide text-ink-4 uppercase">
+                <span className="text-[10px] font-semibold tracking-wide text-ink-3 uppercase">
                   {check.mode === 'llm' ? 'AI extraction' : check.mode === 'heuristic' ? 'Offline rules' : 'Signals only'}
                 </span>
               </div>

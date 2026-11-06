@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { ArrowRight, Plane } from 'lucide-react'
+import { ArrowRight, Check, Plane } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { api, ApiError, type DemoAccount } from '../api/client'
@@ -35,14 +35,28 @@ export default function Login() {
       <aside className="relative hidden overflow-hidden bg-ink p-12 text-white lg:flex lg:flex-col lg:justify-between">
         <div className="flex items-center gap-2 text-[15px] font-bold"><Plane className="size-5 text-sunrise" /> Akasa Leave</div>
         <div>
-          <p className="font-mono text-[12px] tracking-[0.2em] text-white/50">CREW · ENGINEERING · CORPORATE</p>
-          <h1 className="mt-3 max-w-md text-[44px] leading-[1.05] font-bold">Time off, cleared for departure.</h1>
+          <h1 className="max-w-md text-[44px] leading-[1.05] font-bold">Time off, cleared for departure.</h1>
           <p className="mt-4 max-w-md text-[15px] text-white/70">
             Apply in seconds, track every approval leg, and give managers the context they need to keep the roster flying.
           </p>
         </div>
-        <div className="font-mono text-[12px] text-white/40">Manager → HOD approval for leave over 3 days · full audit trail</div>
-        <div aria-hidden className="pointer-events-none absolute -right-24 -bottom-24 size-96 rounded-full bg-sunrise/25 blur-3xl" />
+        {/* The product's own artefact as the visual: a leave ticket clearing its legs. */}
+        <figure aria-label="Example leave request" className="max-w-md rounded-[var(--radius-card)] bg-white/[0.06] p-5 ring-1 ring-white/10">
+          <div className="flex items-center justify-between">
+            <span className="font-mono text-[13px] text-white/60">#0042 · Engineering</span>
+            <span className="rounded-full bg-[#15803d]/25 px-2.5 py-1 text-[12px] font-semibold text-[#86efac]">Approved</span>
+          </div>
+          <div className="mt-3 flex items-center gap-3 font-mono text-[22px] font-semibold tnum">
+            16 DEC <span className="h-px w-8 bg-white/30" aria-hidden /> 20 DEC
+          </div>
+          <ol className="mt-4 flex items-center gap-2 text-[12px] text-white/70">
+            <li className="flex items-center gap-1.5"><span className="grid size-5 place-items-center rounded-full bg-white/90 text-ink"><Check className="size-3" strokeWidth={3} aria-hidden /></span>Applied</li>
+            <li aria-hidden className="h-px w-6 bg-white/25" />
+            <li className="flex items-center gap-1.5"><span className="grid size-5 place-items-center rounded-full bg-[#15803d] text-[10px] font-bold">1</span>Manager</li>
+            <li aria-hidden className="h-px w-6 bg-white/25" />
+            <li className="flex items-center gap-1.5"><span className="grid size-5 place-items-center rounded-full bg-[#15803d] text-[10px] font-bold">2</span>HOD</li>
+          </ol>
+        </figure>
       </aside>
 
       <main className="flex items-center justify-center p-5 sm:p-10">

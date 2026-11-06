@@ -178,7 +178,7 @@ function CopilotCard({ id }: { id: number }) {
   const q = useCopilot(id, on)
   const tone = { high: 'bg-hold-wash text-hold', medium: 'bg-amber-wash text-amber', low: 'bg-haze text-ink-2', info: 'bg-cleared-wash text-cleared' } as const
   return (
-    <section className="rounded-[var(--radius-card)] bg-gradient-to-br from-sunrise-wash to-cloud p-5 shadow-lift">
+    <section className="rounded-[var(--radius-card)] bg-sunrise-wash/60 p-5 shadow-lift">
       <div className="flex items-center justify-between gap-3">
         <h3 className="flex items-center gap-2 text-[13px] font-bold text-ink">
           <Sparkles className="size-4 text-sunrise" aria-hidden /> Review co-pilot

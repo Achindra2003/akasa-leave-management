@@ -43,7 +43,7 @@ export function NotificationBell({ onOpenRequest }: { onOpenRequest: (id: number
         <button aria-label={`Notifications${unread ? `, ${unread} unread` : ''}`} className="press relative grid size-10 place-items-center rounded-full text-ink-2 hover:bg-haze">
           <Bell className="size-[18px]" />
           {unread > 0 && (
-            <span className="absolute top-1.5 right-1.5 grid min-w-4 place-items-center rounded-full bg-sunrise px-1 text-[10px] leading-4 font-bold text-white tnum">{unread > 9 ? '9+' : unread}</span>
+            <span className="absolute top-1.5 right-1.5 grid min-w-4 place-items-center rounded-full bg-sunrise-deep px-1 text-[10px] leading-4 font-bold text-white tnum">{unread > 9 ? '9+' : unread}</span>
           )}
         </button>
       </Popover.Trigger>
@@ -71,7 +71,7 @@ export function NotificationBell({ onOpenRequest }: { onOpenRequest: (id: number
                       <span className={clsx('block text-[13px] text-ink', !n.read && 'font-semibold')}>{n.title}</span>
                       {n.body && <span className="block truncate text-[12px] text-ink-3">{n.body}</span>}
                     </span>
-                    <span className="shrink-0 text-[11px] text-ink-4">{ago(n.createdAt)}</span>
+                    <span className="shrink-0 text-[11px] text-ink-3">{ago(n.createdAt)}</span>
                   </button>
                 </Popover.Close>
               </li>

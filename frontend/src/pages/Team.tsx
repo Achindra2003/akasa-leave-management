@@ -58,7 +58,7 @@ export default function Team() {
                     return (
                       <th key={d.date} title={b?.name} className={clsx('min-w-[30px] px-0 py-2 text-center font-normal', d.weekday >= 5 && 'bg-haze/40', b && 'bg-[repeating-linear-gradient(135deg,transparent_0_4px,rgb(109_40_217/0.12)_4px_8px)]')}>
                         <div className="text-[10px] text-ink-3">{'MTWTFSS'[d.weekday]}</div>
-                        <div className={clsx('font-mono font-semibold tnum', d.date === today ? 'mx-auto grid size-6 place-items-center rounded-full bg-sunrise text-white' : 'text-ink')}>{d.date.slice(8)}</div>
+                        <div className={clsx('font-mono font-semibold tnum', d.date === today ? 'mx-auto grid size-6 place-items-center rounded-full bg-sunrise-deep text-white' : 'text-ink')}>{d.date.slice(8)}</div>
                       </th>
                     )
                   })}

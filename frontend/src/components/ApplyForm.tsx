@@ -124,7 +124,7 @@ function Form({ policy, prefill, onSubmitted }: { policy: Policy; prefill?: Pref
           <p className="text-[13px] text-ink-3">You'll be notified at each approval step.</p>
         </div>
         <div className="text-right" aria-live="polite">
-          <div className={clsx('font-mono text-[28px] leading-none font-semibold tnum transition-colors', total ? (needsDocs ? 'text-violet' : 'text-ink') : 'text-ink-4')}>
+          <div className={clsx('font-mono text-[28px] leading-none font-semibold tnum transition-colors', total ? (needsDocs ? 'text-violet' : 'text-ink') : 'text-ink-3')}>
             {String(total).padStart(2, '0')}
           </div>
           <div className="mt-1 text-[11px] font-semibold tracking-wide text-ink-3 uppercase">

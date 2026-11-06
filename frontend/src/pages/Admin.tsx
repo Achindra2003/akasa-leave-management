@@ -27,18 +27,17 @@ export default function Admin() {
       </div>
 
       <Card className="p-5">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <div className="font-mono text-[40px] leading-none font-semibold tnum">{total}</div>
-            <div className="mt-1 text-[11px] font-semibold tracking-wide text-ink-3 uppercase">requests</div>
-          </div>
-          <div className="flex gap-6 text-right text-[13px]">
-            <div><div className="font-mono text-[20px] font-semibold tnum text-amber">{stats.data?.pendingOver48H ?? '–'}</div><div className="text-[11px] text-ink-3 uppercase">pending &gt; 48h</div></div>
-            <div><div className="font-mono text-[20px] font-semibold tnum text-sunrise-deep">{stats.data?.viaAssistant ?? '–'}</div><div className="text-[11px] text-ink-3 uppercase">via assistant</div></div>
-          </div>
+        {/* The distribution is the point, not a big total: lead with where requests are. */}
+        <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+          <h2 className="text-[15px] font-bold">Where every request stands</h2>
+          <p className="text-[13px] text-ink-2 tnum">
+            {total} total
+            {!!stats.data?.pendingOver48H && <> · <b className="text-amber">{stats.data.pendingOver48H} waiting over 48h</b></>}
+            {!!stats.data?.viaAssistant && <> · {stats.data.viaAssistant} via assistant</>}
+          </p>
         </div>
         {/* Proportional status bar: one glance shows where requests are stuck. */}
-        <div className="mt-5 flex h-2.5 overflow-hidden rounded-full bg-haze" role="img" aria-label="Requests by status">
+        <div className="mt-4 flex h-3 gap-0.5 overflow-hidden rounded-full bg-haze" role="img" aria-label="Requests by status">
           {stats.data && ORDER.map((s) => {
             const n = stats.data.byStatus[s] ?? 0
             return n ? <div key={s} className={clsx(STATUS[s].cls.split(' ')[1].replace('text-', 'bg-'))} style={{ width: `${(n / total) * 100}%` }} /> : null

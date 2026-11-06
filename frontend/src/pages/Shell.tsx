@@ -36,7 +36,7 @@ export default function Shell() {
               <NavLink key={t.to} to={t.to} end
                 className={({ isActive }) => clsx('press flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[13px] font-semibold whitespace-nowrap transition-colors', isActive ? 'bg-ink text-white' : 'text-ink-2 hover:bg-haze hover:text-ink')}>
                 {t.label}
-                {!!t.badge && <span className="rounded-full bg-sunrise px-1.5 text-[11px] text-white tnum">{t.badge}</span>}
+                {!!t.badge && <span className="rounded-full bg-sunrise-deep px-1.5 text-[11px] text-white tnum">{t.badge}</span>}
               </NavLink>
             ))}
           </nav>

@@ -116,7 +116,7 @@ export function Assistant({ onPrefill }: { onPrefill: (p: Prefill) => void }) {
 
           <form onSubmit={(e) => { e.preventDefault(); send(input) }} className="flex items-center gap-2 border-t border-rule p-3">
             <input className="field" value={input} maxLength={1000} placeholder="e.g. Friday off for a family function" onChange={(e) => setInput(e.target.value)} aria-label="Message" />
-            <button type="submit" disabled={!input.trim() || busy} aria-label="Send" className="press grid size-10 shrink-0 place-items-center rounded-full bg-sunrise text-white disabled:opacity-40">
+            <button type="submit" disabled={!input.trim() || busy} aria-label="Send" className="press grid size-10 shrink-0 place-items-center rounded-full bg-sunrise-deep text-white disabled:opacity-40">
               <ArrowUp className="size-5" />
             </button>
           </form>

@@ -18,8 +18,8 @@
   /* ink = night sky, used for text + structure */
   --color-ink: #14123a;
   --color-ink-2: #4a4870;
-  --color-ink-3: #7c7a9c;
-  --color-ink-4: #b3b1c9;
+  --color-ink-3: #67658a;   /* 5.0:1 on sky - AA for small text */
+  --color-ink-4: #b3b1c9;   /* decorative only (icons, rules) - never text */
 
   /* surfaces: cloud layers */
   --color-sky: #f5f4fa;      /* canvas */
@@ -30,7 +30,7 @@
 
   /* the one accent: sunrise */
   --color-sunrise: #f36b21;
-  --color-sunrise-deep: #d9560f;
+  --color-sunrise-deep: #b5410b; /* 5.6:1 with white - buttons, small text */
   --color-sunrise-wash: #fff1e8;
 
   /* status lights */
@@ -39,7 +39,7 @@
   --color-sky-blue: #0369a1; --color-sky-wash: #e0f2fe;    /* info requested */
   --color-cleared: #15803d; --color-cleared-wash: #dcfce7; /* approved */
   --color-hold: #b91c1c;    --color-hold-wash: #fee2e2;    /* rejected */
-  --color-parked: #64748b;  --color-parked-wash: #f1f5f9;  /* cancelled */
+  --color-parked: #55657a;  --color-parked-wash: #f1f5f9;  /* cancelled */
 
   --radius-control: 8px;
   --radius-card: 14px;
@@ -54,6 +54,10 @@
 
 html {
   -webkit-font-smoothing: antialiased;
+  accent-color: var(--color-sunrise-deep);   /* native date pickers, selects, checkboxes */
+  caret-color: var(--color-sunrise-deep);
+  scrollbar-color: var(--color-ink-4) transparent;
+  scrollbar-width: thin;
   -webkit-tap-highlight-color: transparent;
 }
 body {
@@ -66,7 +70,7 @@ p { text-wrap: pretty; }
 /* inputs are inset: slightly darker than the card */
 .field {
   @apply w-full rounded-[var(--radius-control)] border border-rule-strong bg-haze/60 px-3 py-2.5
-    text-ink placeholder:text-ink-4 outline-none transition-[border-color,box-shadow]
+    text-ink placeholder:text-ink-3/80 outline-none transition-[border-color,box-shadow]
     duration-150 focus:border-sunrise focus:bg-cloud focus:ring-3 focus:ring-sunrise/15;
   font-size: 16px; /* >=16px prevents iOS zoom-on-focus */
 }
@@ -103,3 +107,8 @@ p { text-wrap: pretty; }
 @media (prefers-reduced-motion: reduce) {
   .popover, .popover[data-state="closed"], .cell-in { animation: fade-in 120ms ease both; }
 }
+
+::selection { background: var(--color-sunrise-wash); color: var(--color-ink); }
+:focus-visible { outline: 2px solid var(--color-sunrise-deep); outline-offset: 2px; border-radius: 6px; }
+.field:focus-visible { outline: none; } /* fields draw their own ring */
+a { text-underline-offset: 3px; }
