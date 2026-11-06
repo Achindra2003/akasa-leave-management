@@ -6,7 +6,8 @@ import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
 import { ApiError, type Policy } from '../api/client'
-import { useApply, usePolicy } from '../api/hooks'
+import { useApply, useCoverage, usePolicy } from '../api/hooks'
+import { CoverageStrip, CoverageVerdict } from './CoverageStrip'
 import { Button, FieldError, Label } from './ui'
 
 export type Prefill = { fromDate: string; toDate: string; reason: string }
@@ -58,7 +59,7 @@ export function ApplyForm({ prefill, onSubmitted }: { prefill?: Prefill | null; 
 
 function Form({ policy, prefill, onSubmitted }: { policy: Policy; prefill?: Prefill | null; onSubmitted?: (id: number) => void }) {
   const schema = useMemo(() => schemaFor(policy), [policy])
-  const { register, handleSubmit, watch, reset, setError, formState: { errors } } = useForm<Values>({
+  const { register, handleSubmit, watch, reset, setError, setValue, formState: { errors } } = useForm<Values>({
     resolver: zodResolver(schema),
     mode: 'onTouched',
     defaultValues: { fromDate: '', toDate: '', reason: '' },
@@ -73,6 +74,7 @@ function Form({ policy, prefill, onSubmitted }: { policy: Policy; prefill?: Pref
   const [from, to] = watch(['fromDate', 'toDate'])
   const total = from && to && to >= from ? days(from, to) : 0
   const needsDocs = total > policy.escalationThresholdDays
+  const cov = useCoverage(total && total <= 62 ? from : undefined, total && total <= 62 ? to : undefined)
 
   const addFiles = (list: FileList | null) => {
     const next = [...files, ...Array.from(list ?? [])]
@@ -143,6 +145,22 @@ function Form({ policy, prefill, onSubmitted }: { policy: Policy; prefill?: Pref
           <FieldError id="to-err">{errors.toDate?.message}</FieldError>
         </div>
       </div>
+
+      {cov.data && total > 0 && cov.data.teamSize > 0 && (
+        <div className="rise mt-4 rounded-[var(--radius-control)] border border-rule p-3">
+          <div className="mb-2 text-[12px] font-semibold tracking-wide text-ink-2 uppercase">Team on duty</div>
+          <CoverageStrip cov={cov.data} from={from} to={to} blackout={cov.data.blackout} />
+          <div className="mt-2">
+            <CoverageVerdict
+              cov={cov.data}
+              onPick={(s) => {
+                setValue('fromDate', s.fromDate, { shouldValidate: true })
+                setValue('toDate', s.toDate, { shouldValidate: true })
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       <div className="mt-4">
         <Label hint={`${watch('reason')?.length ?? 0}/500`}>Reason</Label>

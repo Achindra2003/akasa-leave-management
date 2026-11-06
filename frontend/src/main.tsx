@@ -11,6 +11,7 @@ import Approvals from './pages/Approvals'
 import Login from './pages/Login'
 import MyLeaves from './pages/MyLeaves'
 import Shell from './pages/Shell'
+import Team from './pages/Team'
 
 const qc = new QueryClient({
   defaultOptions: {
@@ -40,6 +41,7 @@ createRoot(document.getElementById('root')!).render(
             <Route element={<Protected><Shell /></Protected>}>
               <Route index element={<MyLeaves />} />
               <Route path="approvals" element={<Protected role="approver"><Approvals /></Protected>} />
+              <Route path="team" element={<Protected role="approver"><Team /></Protected>} />
               <Route path="admin" element={<Protected role="hr"><Admin /></Protected>} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

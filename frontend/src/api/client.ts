@@ -76,3 +76,46 @@ export async function openAttachment(id: number, filename: string, download = fa
   } else window.open(url, '_blank', 'noopener')
   setTimeout(() => URL.revokeObjectURL(url), 60_000)
 }
+
+// ---- operational extras (endpoints return plain JSON; typed here explicitly) ----
+export type CoverageDay = {
+  date: string
+  weekday: number
+  off: { userId: number; name: string; tentative: boolean }[]
+  available: number
+  short: boolean
+}
+export type Coverage = {
+  teamSize: number
+  minAvailable: number
+  days: CoverageDay[]
+  shortDays?: string[]
+  suggestions?: { fromDate: string; toDate: string }[]
+  blackout?: { name: string; reason: string | null; fromDate: string; toDate: string } | null
+  members?: { id: number; name: string; title: string | null }[]
+  blackouts?: { name: string; fromDate: string; toDate: string }[]
+}
+export type DocCheck = {
+  verdict: 'consistent' | 'needs_review' | 'suspicious'
+  mode: 'llm' | 'heuristic' | 'signals_only'
+  checks: { key: string; status: 'pass' | 'warn' | 'fail' | 'unknown'; label: string; detail: string }[]
+  extracted: Record<string, string | null> | null
+}
+export type Notice = {
+  id: number
+  kind: string
+  title: string
+  body: string | null
+  requestId: number | null
+  read: boolean
+  createdAt: string
+}
+export type Blackout = {
+  id: number
+  name: string
+  reason: string | null
+  fromDate: string
+  toDate: string
+  departmentId: number | null
+  department: string | null
+}

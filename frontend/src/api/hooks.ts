@@ -11,6 +11,9 @@ import {
   type LeaveSummary,
   type Policy,
   type Schemas,
+  type Blackout,
+  type Coverage,
+  type Notice,
 } from './client'
 
 export const usePolicy = () =>
@@ -54,7 +57,7 @@ function useInvalidateLeaves() {
   const qc = useQueryClient()
   return () =>
     Promise.all(
-      ['leaves', 'approvals', 'leave', 'timeline', 'admin', 'copilot'].map((k) =>
+      ['leaves', 'approvals', 'leave', 'timeline', 'admin', 'copilot', 'coverage', 'team-calendar', 'notifications'].map((k) =>
         qc.invalidateQueries({ queryKey: [k] }),
       ),
     )
@@ -109,3 +112,36 @@ export function useLeaveAction(id: number) {
 }
 
 export { useInvalidateLeaves }
+
+// ---- operational extras ----
+export const useCoverage = (from?: string, to?: string, requestId?: number) =>
+  useQuery({
+    queryKey: ['coverage', from, to, requestId],
+    queryFn: () =>
+      api<Coverage>(`/coverage?fromDate=${from}&toDate=${to}${requestId ? `&requestId=${requestId}` : ''}`),
+    enabled: !!from && !!to && to >= from,
+    placeholderData: (prev) => prev, // keep the strip steady while dates change
+    staleTime: 15_000,
+  })
+export const useTeamCalendar = (start: string, days: number) =>
+  useQuery({
+    queryKey: ['team-calendar', start, days],
+    queryFn: () => api<Coverage>(`/coverage/team?start=${start}&days=${days}`),
+    placeholderData: (prev) => prev,
+  })
+export const useNotifications = (enabled: boolean) =>
+  useQuery({
+    queryKey: ['notifications'],
+    queryFn: () => api<{ unread: number; items: Notice[] }>('/notifications'),
+    enabled,
+    refetchInterval: 20_000,
+  })
+export const useBlackouts = () =>
+  useQuery({ queryKey: ['blackouts'], queryFn: () => api<Blackout[]>('/blackouts') })
+export const useDelegateCandidates = (enabled: boolean) =>
+  useQuery({
+    queryKey: ['delegate-candidates'],
+    queryFn: () => api<{ id: number; name: string; title: string | null }[]>('/users/delegate-candidates'),
+    enabled,
+    staleTime: Infinity,
+  })

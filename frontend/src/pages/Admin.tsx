@@ -4,6 +4,7 @@ import { useState } from 'react'
 import type { LeaveStatus } from '../api/client'
 import { useAllRequests, useAudit, useStats } from '../api/hooks'
 import { LeaveRow, STATUS } from '../components/leave'
+import { BlackoutsPanel } from '../components/BlackoutsPanel'
 import { RequestSheet } from '../components/RequestSheet'
 import { Card, Empty, ErrorNote, Skeleton } from '../components/ui'
 
@@ -11,7 +12,7 @@ const ORDER: LeaveStatus[] = ['PENDING_MANAGER', 'PENDING_HOD', 'INFO_REQUESTED'
 
 export default function Admin() {
   const [status, setStatus] = useState<LeaveStatus | undefined>()
-  const [tab, setTab] = useState<'requests' | 'audit'>('requests')
+  const [tab, setTab] = useState<'requests' | 'audit' | 'blackouts'>('requests')
   const [open, setOpen] = useState<number | null>(null)
   const stats = useStats()
   const reqs = useAllRequests(status)
@@ -55,14 +56,14 @@ export default function Admin() {
 
       <Card>
         <div className="flex gap-1 border-b border-rule px-4 py-3" role="tablist">
-          {(['requests', 'audit'] as const).map((t) => (
+          {(['requests', 'audit', 'blackouts'] as const).map((t) => (
             <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)}
               className={`press rounded-full px-3.5 py-1.5 text-[13px] font-semibold ${tab === t ? 'bg-ink text-white' : 'text-ink-2 hover:bg-haze'}`}>
-              {t === 'requests' ? 'All requests' : 'Audit log'}
+              {t === 'requests' ? 'All requests' : t === 'audit' ? 'Audit log' : 'Blackout periods'}
             </button>
           ))}
         </div>
-        {tab === 'requests' ? (
+        {tab === 'blackouts' ? <BlackoutsPanel /> : tab === 'requests' ? (
           reqs.isLoading ? <Skeleton /> : reqs.error ? <ErrorNote error={reqs.error} /> : !reqs.data?.length ? <Empty icon={<ScrollText className="size-5" />} title="No requests" /> : (
             <div className="divide-y divide-rule">{reqs.data.map((l) => <LeaveRow key={l.id} leave={l} showEmployee onOpen={() => setOpen(l.id)} />)}</div>
           )

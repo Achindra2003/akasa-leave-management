@@ -1,10 +1,11 @@
 import * as Dialog from '@radix-ui/react-dialog'
 import clsx from 'clsx'
-import { FileText, Loader2, Sparkles, Upload, X } from 'lucide-react'
+import { CalendarRange, Loader2, Sparkles, Upload, X } from 'lucide-react'
 import { useState } from 'react'
-import { toast } from 'sonner'
-import { ApiError, openAttachment, type Action, type LeaveDetail } from '../api/client'
-import { useCopilot, useLeave, useLeaveAction, useTimeline } from '../api/hooks'
+import { ApiError, type Action, type LeaveDetail } from '../api/client'
+import { useCopilot, useCoverage, useLeave, useLeaveAction, useTimeline } from '../api/hooks'
+import { CoverageStrip } from './CoverageStrip'
+import { DocumentsSection } from './DocumentCard'
 import { useAuth } from '../auth'
 import { ApprovalLegs, DateRoute, StatusBadge } from './leave'
 import { Button, ErrorNote, FieldError, Label } from './ui'
@@ -37,7 +38,12 @@ function SheetBody({ id, onClose }: { id: number; onClose: () => void }) {
   const { user } = useAuth()
   const leave = useLeave(id)
   const d = leave.data
-  const isApprover = !!d && d.employeeId !== user?.id && (d.steps.some((s) => s.approverId === user?.id) || user?.role === 'HR_ADMIN')
+  const isApprover =
+    !!d &&
+    d.employeeId !== user?.id &&
+    (d.steps.some((s) => s.approverId === user?.id) ||
+      user?.role === 'HR_ADMIN' ||
+      d.allowedActions.includes('APPROVE'))
 
   return (
     <>
@@ -68,37 +74,25 @@ function SheetBody({ id, onClose }: { id: number; onClose: () => void }) {
               <div className="mt-3 flex gap-4 text-[13px] text-ink-2">
                 <span className="tnum"><b className="text-ink">{d.totalDays}</b> calendar {d.totalDays === 1 ? 'day' : 'days'}</span>
                 <span className="tnum"><b className="text-ink">{d.workingDays}</b> working</span>
-                {d.requiresDocuments && <span className="font-semibold text-violet">2-level approval</span>}
+                {d.steps.length > 1 && <span className="font-semibold text-violet">2-level approval</span>}
               </div>
+              {d.blackoutName && (
+                <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-violet-wash px-2.5 py-1 text-[12px] font-semibold text-violet">
+                  <CalendarRange className="size-3.5" aria-hidden /> In blackout: {d.blackoutName}
+                </div>
+              )}
               <p className="mt-4 rounded-[var(--radius-control)] bg-haze/70 px-3.5 py-3 text-[14px] text-ink">{d.reason}</p>
               <div className="mt-5 border-t border-rule pt-4">
                 <ApprovalLegs leave={d} />
               </div>
             </section>
 
+            {isApprover && <TeamCoverage leave={d} />}
             {isApprover && d.allowedActions.length > 0 && <CopilotCard id={id} />}
 
             {d.allowedActions.length > 0 && <ActionPanel leave={d} onDone={(a) => a === 'CANCEL' && onClose()} />}
 
-            {d.attachments.length > 0 && (
-              <section className="rounded-[var(--radius-card)] bg-cloud p-5 shadow-lift">
-                <h3 className="mb-3 text-[13px] font-bold text-ink">Documents</h3>
-                <ul className="space-y-2">
-                  {d.attachments.map((a) => (
-                    <li key={a.id}>
-                      <button
-                        onClick={() => openAttachment(a.id, a.filename).catch((e: Error) => toast.error(e.message))}
-                        className="press flex w-full items-center gap-3 rounded-[var(--radius-control)] bg-haze/60 px-3 py-2.5 text-left hover:bg-haze"
-                      >
-                        <FileText className="size-4 text-ink-3" aria-hidden />
-                        <span className="flex-1 truncate text-[13px] font-semibold text-ink">{a.filename}</span>
-                        <span className="tnum text-[12px] text-ink-3">{(a.size / 1024).toFixed(0)} KB</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
+            <DocumentsSection leave={d} reviewer={isApprover} />
 
             <Conversation leave={d} />
             <Timeline id={id} />
@@ -265,6 +259,23 @@ function Timeline({ id }: { id: number }) {
           </li>
         ))}
       </ol>
+    </section>
+  )
+}
+
+function TeamCoverage({ leave }: { leave: LeaveDetail }) {
+  const q = useCoverage(leave.fromDate, leave.toDate, leave.id)
+  if (!q.data || !q.data.teamSize) return null
+  const shortDays = q.data.shortDays ?? []
+  return (
+    <section className="rounded-[var(--radius-card)] bg-cloud p-5 shadow-lift">
+      <div className="mb-3 flex items-baseline justify-between gap-2">
+        <h3 className="text-[13px] font-bold text-ink">Team on duty</h3>
+        <span className={shortDays.length ? 'text-[12px] font-semibold text-hold' : 'text-[12px] text-cleared'}>
+          {shortDays.length ? `${shortDays.length} short-staffed day(s) if approved` : 'Covered if approved'}
+        </span>
+      </div>
+      <CoverageStrip cov={q.data} from={leave.fromDate} to={leave.toDate} blackout={q.data.blackout} />
     </section>
   )
 }

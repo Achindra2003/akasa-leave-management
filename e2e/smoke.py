@@ -26,6 +26,12 @@ def launch(p):
     raise SystemExit("No Chromium-based browser found")
 
 
+def sign_out(page):
+    page.get_by_role("button", name="Account").click()
+    page.get_by_role("button", name="Sign out").click()
+    page.wait_for_url("**/login")
+
+
 def login(page, name):
     page.goto(f"{BASE}/login")
     page.get_by_role("button", name=name).click()
@@ -53,6 +59,7 @@ with sync_playwright() as p:
         page.locator('input[name="toDate"]').fill((start + timedelta(days=4)).isoformat())
         page.locator('textarea[name="reason"]').fill(REASON)
         expect(page.get_by_text("supporting document")).to_be_visible()
+        expect(page.get_by_text("Team on duty")).to_be_visible()
         page.get_by_role("button", name="Submit request").click()
         expect(page.get_by_text("Attach at least one supporting document")).to_be_visible()
         page.screenshot(path=OUT / "02-apply-validation.png")
@@ -81,7 +88,7 @@ with sync_playwright() as p:
         expect(page.get_by_text("Submitted", exact=False).last).to_be_visible()
 
         # Manager approves -> goes to HOD
-        page.get_by_role("button", name="Sign out").click()
+        sign_out(page)
         login(page, "Ananya Sharma")
         expect(page.get_by_role("heading", name="Approvals")).to_be_visible()
         page.get_by_text(REASON).click()
@@ -93,20 +100,48 @@ with sync_playwright() as p:
         page.keyboard.press("Escape")
 
         # HOD approves
-        page.get_by_role("button", name="Sign out").click()
+        sign_out(page)
         login(page, "Vikram Rao")
         page.get_by_text(REASON).click()
         page.get_by_role("button", name="Approve").click()
         expect(page.get_by_text("Approved").first).to_be_visible()
         page.keyboard.press("Escape")
 
+        # Meera covers Vikram (on leave today): sees his queue, verifies documents
+        sign_out(page)
+        login(page, "Meera Joshi")
+        page.get_by_text("Knee surgery and recovery").click()
+        expect(page.get_by_text("Looks consistent")).to_be_visible()
+        expect(page.get_by_text("Team on duty").first).to_be_visible()
+        page.screenshot(path=OUT / "08-delegate-doc-verification.png")
+        page.get_by_role("button", name="Verify", exact=True).click()
+        expect(page.get_by_text("Verified", exact=True).first).to_be_visible()
+        page.keyboard.press("Escape")
+        page.get_by_role("link", name="Approvals").click()
+        page.get_by_role("tab", name="Handled by me").click()
+        page.get_by_role("tab", name="Pending", exact=False).click()
+        page.get_by_text("Family emergency back home").count()  # info requested - not pending
+
+        # Manager team calendar
+        sign_out(page)
+        login(page, "Ananya Sharma")
+        page.get_by_role("link", name="Team").click()
+        expect(page.get_by_text("On duty (min")).to_be_visible()
+        page.screenshot(path=OUT / "09-team-calendar.png")
+        page.get_by_role("button", name="Notifications", exact=False).click()
+        page.screenshot(path=OUT / "10-notifications.png")
+        page.keyboard.press("Escape")
+
         # HR overview + audit
-        page.get_by_role("button", name="Sign out").click()
+        sign_out(page)
         login(page, "Priya Nair")
         page.get_by_role("link", name="HR overview").click()
         page.get_by_role("tab", name="Audit log").click()
         expect(page.get_by_text("leave.approve").first).to_be_visible()
         page.screenshot(path=OUT / "06-hr-audit.png")
+        page.get_by_role("tab", name="Blackout periods").click()
+        expect(page.get_by_text("C-check · VT-AKB")).to_be_visible()
+        page.screenshot(path=OUT / "11-blackouts.png")
     except Exception:
         page.screenshot(path=OUT / "failure.png")
         raise

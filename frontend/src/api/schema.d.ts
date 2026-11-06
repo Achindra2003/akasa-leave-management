@@ -416,6 +416,202 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/coverage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Coverage For Dates
+         * @description Team availability for a date range.
+         *
+         *     Without ``requestId``: the caller's own team, *as if* they took these days (apply form).
+         *     With ``requestId``: the requester's team, for an approver reviewing it.
+         */
+        get: operations["coverage_for_dates_api_v1_coverage_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/coverage/team": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Team Calendar
+         * @description Roster view for a manager's direct reports (HR may view any manager's team).
+         */
+        get: operations["team_calendar_api_v1_coverage_team_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/attachments/{attachment_id}/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Check Document */
+        post: operations["check_document_api_v1_attachments__attachment_id__check_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/attachments/{attachment_id}/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verify Document */
+        post: operations["verify_document_api_v1_attachments__attachment_id__verify_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/blackouts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Blackouts */
+        get: operations["list_blackouts_api_v1_blackouts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/blackouts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Blackout */
+        post: operations["create_blackout_api_v1_admin_blackouts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/blackouts/{blackout_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Blackout */
+        delete: operations["delete_blackout_api_v1_admin_blackouts__blackout_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Notifications */
+        get: operations["notifications_api_v1_notifications_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notifications/read-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Read All */
+        post: operations["read_all_api_v1_notifications_read_all_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/delegate-candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Delegate Candidates */
+        get: operations["delegate_candidates_api_v1_users_delegate_candidates_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/me/delegate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set Delegate */
+        put: operations["set_delegate_api_v1_auth_me_delegate_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -485,6 +681,17 @@ export interface components {
              * Format: date-time
              */
             createdAt: string;
+            /**
+             * Verification
+             * @default PENDING
+             */
+            verification: string;
+            /** Verificationnote */
+            verificationNote?: string | null;
+            /** Aicheck */
+            aiCheck?: {
+                [key: string]: unknown;
+            } | null;
         };
         /** AuditOut */
         AuditOut: {
@@ -518,6 +725,25 @@ export interface components {
              * Format: date-time
              */
             createdAt: string;
+        };
+        /** BlackoutIn */
+        BlackoutIn: {
+            /** Name */
+            name: string;
+            /** Reason */
+            reason?: string | null;
+            /**
+             * Fromdate
+             * Format: date
+             */
+            fromDate: string;
+            /**
+             * Todate
+             * Format: date
+             */
+            toDate: string;
+            /** Departmentid */
+            departmentId?: number | null;
         };
         /** Body_apply_for_leave_api_v1_leaves_post */
         Body_apply_for_leave_api_v1_leaves_post: {
@@ -635,6 +861,11 @@ export interface components {
              */
             version?: number | null;
         };
+        /** DelegateIn */
+        DelegateIn: {
+            /** Delegateid */
+            delegateId: number | null;
+        };
         /** DemoAccount */
         DemoAccount: {
             /** Name */
@@ -703,6 +934,13 @@ export interface components {
              * @default 0
              */
             attachmentCount: number;
+            /** Blackoutname */
+            blackoutName?: string | null;
+            /**
+             * Flaggeddocuments
+             * @default 0
+             */
+            flaggedDocuments: number;
             /** Steps */
             steps: components["schemas"]["StepOut"][];
             /** Attachments */
@@ -769,6 +1007,13 @@ export interface components {
              * @default 0
              */
             attachmentCount: number;
+            /** Blackoutname */
+            blackoutName?: string | null;
+            /**
+             * Flaggeddocuments
+             * @default 0
+             */
+            flaggedDocuments: number;
         };
         /** LoginIn */
         LoginIn: {
@@ -828,6 +1073,8 @@ export interface components {
             comment: string | null;
             /** Decidedat */
             decidedAt: string | null;
+            /** Actedbyname */
+            actedByName?: string | null;
         };
         /** TokenOut */
         TokenOut: {
@@ -855,6 +1102,10 @@ export interface components {
             department?: string | null;
             /** Managername */
             managerName?: string | null;
+            /** Delegateid */
+            delegateId?: number | null;
+            /** Delegatename */
+            delegateName?: string | null;
             /**
              * Isapprover
              * @default false
@@ -873,6 +1124,16 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /** VerifyIn */
+        VerifyIn: {
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "VERIFIED" | "FLAGGED";
+            /** Note */
+            note?: string | null;
         };
     };
     responses: never;
@@ -1526,6 +1787,329 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CopilotOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    coverage_for_dates_api_v1_coverage_get: {
+        parameters: {
+            query: {
+                fromDate: string;
+                toDate: string;
+                requestId?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    team_calendar_api_v1_coverage_team_get: {
+        parameters: {
+            query?: {
+                start?: string | null;
+                days?: number;
+                managerId?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    check_document_api_v1_attachments__attachment_id__check_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                attachment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    verify_document_api_v1_attachments__attachment_id__verify_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                attachment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerifyIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_blackouts_api_v1_blackouts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+        };
+    };
+    create_blackout_api_v1_admin_blackouts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BlackoutIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_blackout_api_v1_admin_blackouts__blackout_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                blackout_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    notifications_api_v1_notifications_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    read_all_api_v1_notifications_read_all_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    delegate_candidates_api_v1_users_delegate_candidates_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+        };
+    };
+    set_delegate_api_v1_auth_me_delegate_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DelegateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */

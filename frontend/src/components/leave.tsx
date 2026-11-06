@@ -3,6 +3,8 @@
 import clsx from 'clsx'
 import {
   Ban,
+  CalendarRange,
+  Flag,
   CheckCircle2,
   CircleDot,
   Clock3,
@@ -110,7 +112,7 @@ export function ApprovalLegs({ leave }: { leave: LeaveDetail }) {
             <span className="ml-1 text-[13px] leading-tight">
               <span className="font-semibold text-ink">{s.approverName}</span>
               <span className="block text-[11px] text-ink-3">
-                {role} · {s.decision === 'PENDING' ? (leave.currentLevel === s.level ? 'now' : 'next') : s.decision.toLowerCase().replace('_', ' ')}
+                {s.actedByName ? `by ${s.actedByName} (delegate) · ` : ''}{role} · {s.decision === 'PENDING' ? (leave.currentLevel === s.level ? 'now' : 'next') : s.decision.toLowerCase().replace('_', ' ')}
               </span>
             </span>
           </li>
@@ -155,6 +157,16 @@ export function LeaveRow({
             <span className="inline-flex items-center gap-1">
               <Paperclip className="size-3" aria-hidden />
               {leave.attachmentCount}
+            </span>
+          )}
+          {leave.blackoutName && (
+            <span className="inline-flex items-center gap-1 text-violet" title={leave.blackoutName}>
+              <CalendarRange className="size-3" aria-hidden /> blackout
+            </span>
+          )}
+          {leave.flaggedDocuments > 0 && (
+            <span className="inline-flex items-center gap-1 font-semibold text-hold">
+              <Flag className="size-3" aria-hidden /> doc flagged
             </span>
           )}
           {leave.channel === 'assistant' && (
