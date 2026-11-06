@@ -64,7 +64,7 @@ This assessment was written after testing the live deployment (Render + Supabase
 | DB round trips: approval queue / request detail / current user | 13 / 14 / 4 | **4 / 6 / 1** |
 | Sequential latency: `/policy` (no DB) | 276 ms | 261 ms, which is *pure network*, India ↔ US |
 | Sequential latency: approval queue | 3.78 s | **1.67 s** |
-| 200 reads at 20 concurrent | p50 3.5 s, 6 req/s, **1/120 → 500** | LOAD_RESULT |
+| 200 reads at 20 concurrent | p50 3.5 s, 6 req/s, **1/120 → 500** (pool exhaustion) | 7 req/s, p50 ~3.5 s, p95 4.3–4.8 s. **0 errors in ~1,000 requests across 5 runs except one unclassified 5xx in one run** (the 0.1-CPU instance queues work; latency is dominated by ~220 ms DB round trips) |
 
 **Three production bugs found by testing the live system, all fixed:**
 1. **Round-trip-bound latency.** Each query crossed the Pacific (~220 ms) because the app runs in Oregon and the DB in Mumbai. Lazy relation loading made one page about 13 sequential round trips. Fixed with JOINs, batched collections, and a lighter summary query for lists.
