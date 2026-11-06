@@ -83,7 +83,7 @@ Format: **Context → Options → Decision → Why → Trade-off accepted**
 **Why.** There's no extra infrastructure, it works the same locally and on Render, and the attachment commits in the same transaction as the request, so you can't end up with a request missing its document or a document with no request.
 **Trade-off.** Putting blobs in the database doesn't scale to large volumes. That's fine for medical certificates at demo scale, and the interface makes the migration path explicit.
 
-## D-008 — Model-agnostic LLM layer (Groq by default)
+## D-008 — Model-agnostic LLM layer (Groq by default) — ⚠️ *Superseded by D-012*
 
 **Context.** We're using a Groq key, but we don't want to be locked into one vendor.
 **Options.** (a) Groq SDK directly (locked in) · (b) LiteLLM (a heavy dependency that hides the loop) · (c) **our own `LLMProvider` interface plus an OpenAI-compatible adapter**.
@@ -93,7 +93,7 @@ Format: **Context → Options → Decision → Why → Trade-off accepted**
 **Why.** Most providers now speak the OpenAI chat-completions and tools format. Writing the agent loop ourselves (rather than using a framework) keeps it about 100 lines, fully testable, and lets us explain every step in the interview.
 **Trade-off.** Provider-specific extras such as prompt caching or reasoning settings aren't exposed. A native adapter can be added behind the same interface if one is ever needed.
 
-## D-009 — Workflow vs agent: use the simplest pattern per feature
+## D-009 — Workflow vs agent: use the simplest pattern per feature — ⚠️ *Implementation superseded by D-012 (principles kept)*
 
 Following "start with the simplest thing that works" (AGENTIC_PATTERNS_GUIDE §1):
 - **Approver co-pilot → workflow, not agent.** The facts it needs are always the same (request, overlaps with the team's leave, documents, history), so **our code gathers them deterministically** and makes one LLM call to summarise and flag. This is predictable, cheap and testable, and the model can't invent the data.
@@ -128,3 +128,39 @@ Most candidates will vibe-code a CRUD app with a form and a table. We set oursel
 | Stress test with worst-case data | `break-ui` | Long names, 30-day spans, empty queues: show it doesn't break |
 | Final accessibility/UX audit | `web-design-guidelines` | A checklist-based review before submission |
 **Status colour semantics** (used consistently everywhere): Pending Manager = amber, Pending HOD = indigo, Info Requested = sky, Approved = green, Rejected = red, Cancelled = slate. The colour always comes **with a text label and icon** (never colour alone, for accessibility).
+
+## D-012 — Agents on LangGraph (revises D-008/D-009)
+
+**Context.** On review, a hand-rolled loop reinvents what LangGraph gives us for free and is the industry default for stateful agents: **durable checkpoints, `interrupt()` for human-in-the-loop, recursion limits, streaming, and LangSmith tracing**. The deciding factor is human confirmation before submit. Done properly, the agent **pauses mid-graph**, the user may answer minutes later, and the run **resumes**. That needs persisted state, which is exactly what LangGraph checkpointers provide.
+**Decision.**
+- **Model-agnostic:** a `get_chat_model()` factory driven by `LLM_PROVIDER` / `LLM_MODEL` / `LLM_BASE_URL` / `LLM_API_KEY`. Providers: `groq` (default), `openai_compat` (OpenAI, OpenRouter, vLLM, Ollama, Gemini's/Anthropic's OpenAI-compatible endpoints), and `fake` (a scripted, deterministic tool-calling model for tests, evals and keyless demo). All return a LangChain `BaseChatModel`, so the graphs don't know which provider they're running on.
+- **Employee assistant = agent graph:** `agent ⇄ tools (read-only) → [draft ready] → confirm (interrupt) → submit → END`. The submit node calls the **same `LeaveService.submit()`** as the REST API, under the user's identity, and writes audit `via=assistant`. The model never holds a submit tool. Submission happens only in a graph node that runs **after a human resume**.
+- **Approver co-pilot = workflow graph:** `gather_facts (code) → summarise (LLM, structured output) → validate → END`. It's deterministic where it can be and the LLM is used only where needed (D-009's principle, kept).
+- **Checkpointer:** `PostgresSaver` (`langgraph-checkpoint-postgres`) in prod, so pending confirmations survive restarts. `InMemorySaver` in tests.
+- **Guardrails stay as in D-009:** least-privilege tools, recursion limit, untrusted-text delimiting, Pydantic validation, and every run traced (`agent_runs` table, plus optional LangSmith via env).
+**Trade-off.** A heavier dependency than a 100-line loop, and the LangGraph API changes quickly, so versions are pinned. Worth it for durable interrupts and standard tooling a reviewer will recognise.
+
+## D-013 — Engineering standards (the "modern, industry-standard" bar)
+
+Influenced by the author's earlier projects (Helix: provider abstraction with a stub default, FastAPI serving the SPA, CI on Postgres, prompt-injection regression tests, a "Known gaps" README; Nirmit: Pydantic as the single contract source, a "headless brain" where all business logic lives in the backend).
+
+**Backend**
+- `uv` + `pyproject.toml` with a lockfile · `ruff` (lint + format) · `mypy` · `pre-commit`
+- FastAPI with an **async** stack: SQLAlchemy 2.0 typed `Mapped[]` models + `psycopg` 3 (async) · `pydantic-settings` for config · `Annotated[..., Depends()]` dependency injection · lifespan handler
+- Layers: `api` (routers, thin) → `services` (business rules, state machine, transactions) → `models`/`repositories`. Routers never touch the ORM directly.
+- Errors as **RFC 9457 Problem Details** (`application/problem+json`), each with a stable `code` and a human-friendly `detail`, so the UI shows the message as-is
+- Auth: JWT (PyJWT) + `pwdlib` (argon2). RBAC enforced in dependencies **and** re-checked in services (defence in depth).
+- Structured JSON logging (`structlog`) with a request-ID middleware, and the same ID in audit rows · `/health` (liveness) + `/ready` (DB)
+- Alembic migrations run on container start · versioned API `/api/v1`
+
+**Frontend**
+- Vite + React + TypeScript (strict) · TanStack Query (server state) · React Router · React Hook Form + **Zod** (the same rules as the backend; the server stays authoritative)
+- Tailwind + shadcn/ui (Radix, accessible primitives) · `sonner` toasts for friendly errors
+- **API types generated from OpenAPI** (`openapi-typescript`): Pydantic is the single source of truth, so frontend and backend can't drift
+- ESLint + Prettier · Vitest + Testing Library
+
+**Quality & delivery**
+- Tests run against **real Postgres**, not SQLite, because the exclusion constraint and `FOR UPDATE` behaviour are Postgres-specific. Unit tests (pure domain logic) → integration tests (httpx `AsyncClient`, full flows, RBAC, concurrency) → agent tests (fake model, interrupt/resume) → evals (golden set)
+- GitHub Actions: lint, type-check, tests with a Postgres service, frontend build, Docker build
+- Multi-stage Dockerfile, non-root, `HEALTHCHECK`; FastAPI serves the built SPA (one image, one port) · `docker-compose.yml` with healthy `depends_on` · **`render.yaml` Blueprint** (deployment as code)
+**Dropped:** the SQLite fallback. It can't enforce the overlap constraint, and we won't ship a mode that's less correct. Docker is the run path.
