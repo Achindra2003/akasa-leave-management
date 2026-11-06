@@ -23,8 +23,9 @@ Open **http://localhost:8000** and click any demo account. No setup, keys or see
 | **Rohan Mehta** | Employee | Apply for 5 days → the form asks for a document → submit |
 | **Ananya Sharma** | Manager (L1) | Approve Rohan's request → it moves to the HOD |
 | **Vikram Rao** | HOD (L2) | Give the second sign-off for leave longer than 3 days |
-| **Priya Nair** | HR admin | Org overview, all requests, immutable audit log |
-| **Kabir Singh** | Employee (edge case) | His manager *is* his HOD, so level 2 routes to HR (no self-double-approval) |
+| **Meera Joshi** | HOD + delegate | Vikram is on leave today, so his queue appears here. Open Rohan's request to see the document checks and coverage |
+| **Priya Nair** | HR admin | Org overview, all requests, audit log, **blackout periods** |
+| **Kabir Singh** | Employee (edge case) | His manager *is* his HOD, so level 2 routes to HR. His certificate is a **reused file**, and verification flags it |
 
 All demo passwords are `Akasa@2026`. API docs (Swagger) are at **http://localhost:8000/api/docs**.
 
@@ -66,6 +67,23 @@ cd frontend && npm ci && npm run dev         # :5173 (proxies /api to :8000)
 
 ---
 
+## Operational extras (what a real airline HR desk needs)
+
+| Feature | What it does | Why it matters |
+|---|---|---|
+| **Document verification** ([D-018](docs/DECISIONS.md)) | Every upload is fingerprinted (SHA-256) and pre-checked: **the same file reused on another request**, PDF made in an image editor, and an AI/heuristic read of name, dates and document type **cross-checked against the request**. An approver then clicks **Verify** or **Flag** | "Documents required" becomes an actual control. The AI advises; a human decides, and every decision is audited |
+| **Team coverage** ([D-021](docs/DECISIONS.md)) | Live "team on duty" strip **while applying**, with one-tap fully-covered alternative dates; "if approved" view for approvers; a manager **team calendar** | Conflicts surface before anyone submits, not in a rejection days later. Staffing is the airline's product |
+| **Blackout periods** ([D-019](docs/DECISIONS.md)) | HR defines windows (C-check, peak travel); any overlapping leave also goes to the HOD | Escalates instead of blocking outright, because emergencies still happen |
+| **Delegation** ([D-020](docs/DECISIONS.md)) | Approvers name a delegate who acts **only while they're on approved leave**; the step records who really decided | A manager's holiday doesn't stall the whole team's requests |
+| **Notifications** ([D-022](docs/DECISIONS.md)) | Bell with per-event messages, written in the same transaction as the change | Closes the loop; the same table is the outbox for future email/Slack |
+
+<p align="center">
+  <img src="docs/screenshots/09-team-calendar.png" width="49%" alt="Team calendar">
+  <img src="docs/screenshots/08-delegate-doc-verification.png" width="49%" alt="Delegate reviewing with coverage">
+</p>
+
+---
+
 ## Architecture
 
 ```mermaid
@@ -80,7 +98,7 @@ flowchart LR
     AI["AI layer (LangGraph)<br/>assistant agent · co-pilot workflow"]
   end
   LLM[("LLM provider<br/>Groq / OpenAI-compatible / offline")]
-  PG[("PostgreSQL<br/>exclusion constraint · audit trigger<br/>LangGraph checkpoints")]
+  PG[("PostgreSQL (Supabase in prod)<br/>exclusion constraint · audit trigger<br/>LangGraph checkpoints")]
 
   SPA -- "same origin" --> API --> SVC --> DOM
   API --> AI -- "tools run as the user" --> SVC
@@ -156,9 +174,9 @@ flowchart LR
 | Layer | What | Command |
 |---|---|---|
 | Unit (55) | Day counting, validation, state machine, routing edge cases | `cd backend && uv run pytest tests/unit` |
-| Integration (40) | Real Postgres via HTTP: full workflows, RBAC/privacy, **5 concurrent identical submits → exactly 1 succeeds**, optimistic locking, append-only audit, document access, AI interrupt/confirm/discard, prompt-injection inertness | `make test` |
+| Integration (51) | Real Postgres via HTTP: full workflows, RBAC/privacy, **5 concurrent identical submits → exactly 1 succeeds**, optimistic locking, append-only audit, document access, AI interrupt/confirm/discard, prompt-injection inertness (chat *and* document text), blackouts, delegation window, notifications, coverage, reuse detection | `make test` |
 | Agent evals (12) | NL → draft accuracy, trajectory, safety (offline or live model) | `make eval` |
-| E2E | Headless browser drives Employee → Manager → HOD → HR across desktop and mobile | `make e2e` |
+| E2E | Headless browser drives Employee → Manager → HOD → delegate → HR (coverage, doc verification, team calendar, blackouts) on desktop and mobile | `make e2e` |
 | Static | ruff, strict TypeScript | `make lint` |
 
 CI runs all of these on every push, including `docker compose up` and the E2E against the built image.
@@ -196,7 +214,7 @@ Dockerfile · docker-compose.yml · render.yaml · .github/workflows/ci.yml
 ## Known limitations (stated plainly)
 - **No leave balances or accrual.** These weren't in the brief. The design is in RESEARCH §5 (append-only ledger) and fits on top of the existing audit/transaction pattern.
 - **Weekends and holidays count toward the "> 3 days" rule** (calendar days, [D-002](docs/DECISIONS.md)). The working-day count is shown for information. It's a one-line policy change.
-- **No email/Slack notifications or SLA escalation.** Audit events are the hook points.
+- **In-app notifications only** (no email/Slack or SLA escalation yet). The `notifications` table is designed to be the outbox.
+- **Coverage is per team, not per licence or skill** (e.g. B1-certified engineers). Scanned image documents get signal checks only (no OCR).
 - **Documents live in Postgres** (`bytea`, fine at demo scale, [D-007](docs/DECISIONS.md)). Moving to S3 means pulling the `Attachment.content` reads and writes (two call sites in `LeaveService`) behind a storage interface. That interface was planned but not built in the time box.
-- **Delegation (acting approver)** is designed but not built.
 - The offline demo model understands a small date grammar. A real LLM handles free-form text (see EVALS).

@@ -17,4 +17,8 @@ A timestamped log of the build (IST, 2026-11-06), kept to show the process and h
 | 14:13 | Docker (multi-stage, non-root) verified from a fresh volume, CI, Render blueprint, eval harness (11/12 → fix → 12/12) |
 | 14:14 | README (diagrams), EVALS, AI_USAGE, decisions D-014–D-016 |
 
+| 14:23 | Phase 2 requested: Supabase + creative extras. Planned document verification, coverage, blackouts, delegation, notifications |
+| 14:33 | Backend for all extras + migration (found Alembic trying to DROP LangGraph's tables; found missing `departments.hod_id` FK) + 11 tests → 106 passing |
+| 14:39 | UI for the extras (interface-design + emil-design-eng), E2E extended and passing on a fresh stack; decisions D-017–D-023 |
+
 _Times after 13:34 are git commit timestamps (`git log --date=format:%H:%M`)._

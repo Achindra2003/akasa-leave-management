@@ -183,3 +183,56 @@ Applied with the `interface-design` skill (D-011):
 
 ## D-016 — Things deliberately *not* done (time box)
 `mypy` is configured but not yet clean (about 20 typing errors, mostly LangGraph generics), so it isn't a CI gate. There's no frontend unit tests (the E2E covers the critical paths instead). There's no rate limiting on `/auth/login` and no refresh tokens (sessions use an 8-hour JWT in `sessionStorage`). All of these are listed so a reviewer doesn't have to find them.
+
+---
+## Phase 2: operational extras (requested after the core build)
+
+## D-017 — Database host: Supabase instead of Neon (revises D-004's host, not the engine)
+
+**Context.** The author asked to switch to Supabase. It's still PostgreSQL, so every guarantee in D-004 holds (exclusion constraint, transactions, append-only trigger).
+**Decision.** Use the Supabase **session pooler or direct connection (port 5432)**, *not* the transaction pooler (6543).
+**Why.** The transaction-mode pooler doesn't support session-level state or server-side prepared statements. psycopg 3 and the LangGraph `PostgresSaver` both rely on these, and the failures would be intermittent. `btree_gist` is available on Supabase, and the migration enables it.
+**Trade-off.** Session mode allows fewer concurrent connections than transaction mode. That's fine for a single small web service with a pool of 5.
+
+## D-018 — Supporting-document verification: signals → AI pre-check → human decision
+
+**Context.** "Ask for documents" is only useful if somebody checks them. In real HR operations, reused or edited medical certificates are a known abuse pattern, and approvers rarely open PDFs.
+**Decision.** A *workflow* (not an agent), which runs as a background task after upload:
+1. **Deterministic signals (cheap, can't hallucinate):** a SHA-256 fingerprint catches the same file attached to another request. Only the *later* copy is marked suspicious; the original is labelled "original upload", so the first person isn't penalised. PDF `Producer` metadata from image editors (Photoshop, Canva…) raises a warning.
+2. **Extraction:** a live LLM (when configured) or offline regex heuristics pull out the document type, the person's name, the issuer and the dates covered. The output is validated with Pydantic, with one retry.
+3. **Cross-check against the request:** does the name match the employee, do the document's dates cover the leave dates, and is it a relevant document type?
+4. **Human decision:** an approver or HR clicks **Verify** or **Flag** (a note is required to flag). It's audited, and the employee is notified. **The AI never sets the verification status.**
+**Why.** It turns "documents required" from a checkbox into an actual control, while keeping a person accountable. Document text is untrusted input: it's delimited and schema-validated, and a test proves that injected text can't produce a verdict.
+**Trade-off.** Scanned images have no text layer, so they get "signals only / needs manual review". OCR would be the next step.
+
+## D-019 — Blackout periods (policy as data)
+
+**Decision.** HR defines windows, organisation-wide or per department (e.g. "C-check · VT-AKB", "Year-end peak travel"). Any leave overlapping one **always gets level-2 (HOD) review**, even a single day, but **doesn't require documents**. The documents rule stays tied to the brief's "more than 3 days".
+**Why.** Airlines have predictable crunch periods. A hard block is too blunt (emergencies happen), so the rule escalates instead of forbidding, and the employee is warned *while applying*.
+
+## D-020 — Delegation (out-of-office approver)
+
+**Decision.** Each approver can name a delegate. The delegate can act on the approver's queue **only on days the approver is on approved leave**. This is computed live from leave data, so there's no "out of office" flag to forget to switch off. The step records `acted_by` separately from `approver`, so the audit shows "Meera (delegate) approved for Vikram". Two existing rules still apply: nobody approves their own leave, and nobody signs off two levels of the same request.
+**Why.** Without delegation, a manager's leave stalls their whole team's requests. This is one of the most common real complaints about leave systems.
+
+## D-021 — Team coverage (roster awareness)
+
+**Decision.** "Team" means people sharing a manager, which matches a line maintenance shift or a crew base. For any range we compute, per day, who's off (approved, plus pending shown as tentative) against a **minimum on duty** (`MIN_TEAM_AVAILABLE_RATIO`, default 50%, rounded up). It's used in three places:
+- the **apply form**, live and showing the effect of *your* leave, with one-tap "fully covered instead" alternative dates;
+- the **approver sheet**, showing what happens if this request is approved;
+- the manager's **team calendar**.
+Peers see names and dates only, **never reasons** (D-001 privacy).
+**Why.** It moves the conflict to the earliest point (while the employee is applying) instead of a rejection days later. For an airline, staffing *is* the product.
+**Trade-off.** It works per team, not per licence or skill (e.g. B1-certified engineers). The next step would be skill-based minimums.
+
+## D-022 — In-app notifications
+
+**Decision.** A `notifications` table is written **in the same transaction** as the event (so it can never announce a change that rolled back), surfaced through a header bell. Recipients are chosen per event: the next approver, the employee on each decision, the approver when info is provided, and the employee when a document is flagged.
+**Why.** It closes the loop without email infrastructure. The table is also the **outbox** an email or Slack worker would read later.
+
+## D-023 — UI for the extras (interface-design + emil-design-eng)
+- **Coverage strip:** each day is a small "departure board" cell with a fuel-gauge-style bar (share of the team on duty), green, amber at minimum, red when short; the requested range is outlined in ink and blackout days are hatched. A short cascade animation runs once (12ms stagger). It's decorative and never blocks input.
+- **Team calendar:** a roster grid with approved leave as solid ink bars and pending as dashed amber, an "on duty" footer row against the minimum, and today marked in sunrise orange.
+- **Popovers** (bell, account) scale from their trigger (`--radix-popover-content-transform-origin`), 180ms ease-out in and 120ms out. The notification *list* itself doesn't animate, because it's opened many times a day.
+- **Hit areas** of 40px or more on icon buttons; hover effects gated behind `(hover: hover)`; `prefers-reduced-motion` respected.
+- **Known compromise:** the delegate picker uses a native `<select>`. It's accessible and mobile-native, but it can't be styled to the token system. A Radix Select would be the polish step.

@@ -1,5 +1,6 @@
-# Render Blueprint (deployment as code). Database: external Neon Postgres (D-004),
-# supplied as DATABASE_URL in the Render dashboard (marked sync: false = secret).
+# Render Blueprint (deployment as code). Database: Supabase Postgres (D-017), supplied as
+# DATABASE_URL in the Render dashboard (sync: false = secret). Use the SESSION pooler or
+# direct connection on port 5432 - NOT the transaction pooler (6543) - and ?sslmode=require.
 services:
   - type: web
     name: akasa-leave
