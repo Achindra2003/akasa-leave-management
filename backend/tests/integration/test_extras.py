@@ -216,7 +216,9 @@ async def test_document_text_cannot_inject_a_verdict(client: httpx.AsyncClient, 
 async def test_delegate_can_use_copilot_while_covering(client: httpx.AsyncClient, org: Org) -> None:
     """Regression (found in production verification): delegates could approve but got 403
     from the co-pilot, because its check ignored delegation."""
-    await client.put("/auth/me/delegate", headers=org.h("mgr"), json={"delegateId": org.ids["lead"]})
+    await client.put(
+        "/auth/me/delegate", headers=org.h("mgr"), json={"delegateId": org.ids["lead"]}
+    )
     rid = (await apply(client, org, "emp", 5, 6)).json()["id"]
     away = (await apply(client, org, "mgr", 0, 1)).json()["id"]
     await act(client, org, "hod", away, "approve")

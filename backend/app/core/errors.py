@@ -11,7 +11,8 @@ from typing import Any
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, OperationalError
+from sqlalchemy.exc import TimeoutError as PoolTimeout
 from sqlalchemy.orm.exc import StaleDataError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -87,6 +88,20 @@ def register_error_handlers(app: FastAPI) -> None:
             return problem(e.status_code, e.code, e.title, e.message)
         log.warning("integrity_error", error=str(exc.orig))
         return problem(409, "conflict", "Conflict", "This change conflicts with existing data.")
+
+    async def _busy(_: Request, exc: Exception) -> JSONResponse:
+        log.warning("database_busy", error=str(exc)[:200])
+        resp = problem(
+            503,
+            "service_busy",
+            "Busy right now",
+            "We're handling a lot of requests right now. Please try again in a few seconds.",
+        )
+        resp.headers["Retry-After"] = "5"
+        return resp
+
+    app.add_exception_handler(PoolTimeout, _busy)
+    app.add_exception_handler(OperationalError, _busy)
 
     @app.exception_handler(StarletteHTTPException)
     async def _http(_: Request, exc: StarletteHTTPException) -> JSONResponse:

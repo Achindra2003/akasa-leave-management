@@ -53,3 +53,24 @@ async def test_assistant_is_rate_limited_per_user(client: httpx.AsyncClient, org
     # another user is unaffected
     r = await client.post("/ai/assistant/chat", headers=org.h("peer"), json={"message": "hi"})
     assert r.status_code == 200
+
+
+async def test_database_exhaustion_is_a_friendly_503(app: object) -> None:
+    """Pool exhaustion must surface as a retryable 503, never a raw 500."""
+    from fastapi import FastAPI
+    from sqlalchemy.exc import TimeoutError as PoolTimeout
+
+    from app.core.errors import register_error_handlers
+
+    probe = FastAPI()
+    register_error_handlers(probe)
+
+    @probe.get("/boom")
+    async def boom() -> None:
+        raise PoolTimeout("QueuePool limit reached")
+
+    transport = httpx.ASGITransport(app=probe)
+    async with httpx.AsyncClient(transport=transport, base_url="http://t") as c:
+        r = await c.get("/boom")
+    assert r.status_code == 503 and r.headers["retry-after"] == "5"
+    assert r.json()["code"] == "service_busy"

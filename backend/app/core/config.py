@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     log_json: bool = False
 
     database_url: str = "postgresql+psycopg://leave:leave@localhost:5432/leave"
+    # Pool sized to the database plan (D-025): Supabase's session pooler allows 15 clients
+    # per database on the free tier, shared by every app instance + the checkpointer.
+    db_pool_size: int = 4
+    db_max_overflow: int = 4
+    db_pool_timeout_s: float = 10.0  # bursts queue for a connection instead of failing
 
     jwt_secret: str = Field(default="dev-only-change-me-please-32bytes!!", min_length=32)
     jwt_ttl_minutes: int = 8 * 60
