@@ -6,6 +6,7 @@ routing, RBAC, state machine, audit) applies identically regardless of channel.
 
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, timedelta
 
@@ -34,8 +35,17 @@ from app.domain.workflow import (
     next_status,
     plan_approval_chain,
 )
-from app.models import ApprovalStep, Attachment, Comment, Department, LeaveRequest, User
+from app.models import (
+    ApprovalStep,
+    Attachment,
+    BlackoutPeriod,
+    Comment,
+    Department,
+    LeaveRequest,
+    User,
+)
 from app.services import audit
+from app.services.notify import notify
 
 
 @dataclass(frozen=True, slots=True)
@@ -69,13 +79,15 @@ class LeaveService:
         return select(LeaveRequest).options(
             selectinload(LeaveRequest.employee).selectinload(User.department),
             selectinload(LeaveRequest.steps).selectinload(ApprovalStep.approver),
+            selectinload(LeaveRequest.steps).selectinload(ApprovalStep.acted_by),
+            selectinload(LeaveRequest.blackout),
             selectinload(LeaveRequest.attachments),
             selectinload(LeaveRequest.comments).selectinload(Comment.author),
         )
 
     async def get(self, request_id: int, viewer: User) -> LeaveRequest:
         req = await self.session.scalar(self._detail_query().where(LeaveRequest.id == request_id))
-        if req is None or not can_view(req, viewer):
+        if req is None or not can_view(req, viewer, await self.acting_for(viewer)):
             # Same response for "missing" and "not yours": don't leak existence.
             raise NotFound("We couldn't find that leave request.")
         return req
@@ -88,13 +100,32 @@ class LeaveService:
         )
         return list((await self.session.scalars(q)).all())
 
+    async def acting_for(self, user: User) -> set[int]:
+        """Approvers this user currently stands in for: they named this user as delegate
+        AND are on approved leave today (D-020). Computed live - no stale 'OOO' flags."""
+        today = self._today()
+        q = (
+            select(User.id)
+            .join(LeaveRequest, LeaveRequest.employee_id == User.id)
+            .where(
+                User.delegate_id == user.id,
+                LeaveRequest.status == LeaveStatus.APPROVED,
+                LeaveRequest.from_date <= today,
+                LeaveRequest.to_date >= today,
+            )
+        )
+        return set((await self.session.scalars(q)).all())
+
     async def pending_for(self, approver: User) -> list[LeaveRequest]:
-        """Requests whose *current* step is assigned to this approver."""
+        """Requests whose *current* step is assigned to this approver, or to someone they
+        are covering for while that person is on leave."""
+        ids = {approver.id} | await self.acting_for(approver)
         q = (
             self._detail_query()
             .join(ApprovalStep, ApprovalStep.request_id == LeaveRequest.id)
             .where(
-                ApprovalStep.approver_id == approver.id,
+                ApprovalStep.approver_id.in_(ids),
+                LeaveRequest.employee_id != approver.id,
                 ApprovalStep.decision == StepDecision.PENDING,
                 ApprovalStep.level == LeaveRequest.current_level,
                 LeaveRequest.status.in_([LeaveStatus.PENDING_MANAGER, LeaveStatus.PENDING_HOD]),
@@ -181,7 +212,9 @@ class LeaveService:
         if clashes:
             raise _overlap_error(clashes[0])
 
-        escalate = requires_escalation(total, self.policy)
+        blackout = await self.find_blackout(employee, from_date, to_date)
+        # Long leave needs documents AND L2; a blackout window needs L2 only (D-019).
+        escalate = requires_escalation(total, self.policy) or blackout is not None
         steps = plan_approval_chain(
             await self._org_person(employee),
             escalate=escalate,
@@ -195,7 +228,8 @@ class LeaveService:
             total_days=total,
             reason=reason.strip(),
             status=LeaveStatus.PENDING_MANAGER,
-            requires_documents=escalate,
+            requires_documents=requires_escalation(total, self.policy),
+            blackout_id=blackout.id if blackout else None,
             current_level=1,
             channel=actor.channel,
         )
@@ -231,6 +265,15 @@ class LeaveService:
                 "documents": [u.filename for u in uploads],
             },
         )
+        where = f" (blackout: {blackout.name})" if blackout else ""
+        await notify(
+            self.session,
+            steps[0].approver_id,
+            "approval_needed",
+            f"{employee.name} requested {total} day(s) off",
+            f"{from_date:%d %b} - {to_date:%d %b}{where}",
+            req.id,
+        )
         await self.session.commit()
         return await self.get(req.id, employee)
 
@@ -248,7 +291,17 @@ class LeaveService:
             raise ValidationFailed("That isn't an approver action.")
         req = await self._load_for_update(request_id, actor.user, expected_version)
         step = _current_step(req)
-        if step is None or step.approver_id != actor.user.id:
+        acting = await self.acting_for(actor.user)
+        if req.employee_id == actor.user.id:
+            raise Forbidden("You can't approve or reject your own leave request.")
+        if step is not None and any(
+            s.level != step.level
+            and actor.user.id in (s.approver_id, s.acted_by_id)
+            and s.decision is StepDecision.APPROVED
+            for s in req.steps
+        ):
+            raise Forbidden("You already signed off this request at another level.")
+        if step is None or (step.approver_id != actor.user.id and step.approver_id not in acting):
             if req.employee_id == actor.user.id:
                 raise Forbidden("You can't approve or reject your own leave request.")
             raise Forbidden("This request isn't waiting on your approval.")
@@ -258,6 +311,8 @@ class LeaveService:
         has_next = any(s.level == step.level + 1 for s in req.steps)
         new_status = next_status(req.status, action, has_next_level=has_next)
         step.decided_at = datetime.now(UTC)
+        # Set the object, not just the id, so the in-session identity map stays correct.
+        step.acted_by = actor.user
         step.comment = comment
 
         if action is Action.APPROVE:
@@ -288,6 +343,7 @@ class LeaveService:
             after=_snapshot(req),
             meta={"level": step.level, "comment": comment},
         )
+        await self._notify_decision(req, action, actor.user, comment)
         await self.session.commit()  # version_id_col -> StaleDataError if someone beat us
         return await self.get(req.id, actor.user)
 
@@ -332,6 +388,16 @@ class LeaveService:
             after=_snapshot(req),
             meta={"comment": comment, "documents": [u.filename for u in uploads]},
         )
+        current = next((st for st in req.steps if st.level == level), None)
+        if current:
+            await notify(
+                self.session,
+                current.approver_id,
+                "info_provided",
+                f"{actor.user.name} replied to your question",
+                comment,
+                req.id,
+            )
         await self.session.commit()
         return await self.get(req.id, actor.user)
 
@@ -377,6 +443,71 @@ class LeaveService:
         return att
 
     # ------------------------------------------------------------------ helpers
+    async def find_blackout(
+        self, employee: User, from_date: date, to_date: date
+    ) -> BlackoutPeriod | None:
+        q = (
+            select(BlackoutPeriod)
+            .where(
+                BlackoutPeriod.from_date <= to_date,
+                BlackoutPeriod.to_date >= from_date,
+                (BlackoutPeriod.department_id.is_(None))
+                | (BlackoutPeriod.department_id == employee.department_id),
+            )
+            .order_by(BlackoutPeriod.from_date)
+        )
+        return (await self.session.scalars(q)).first()
+
+    async def _notify_decision(
+        self, req: LeaveRequest, action: Action, by: User, comment: str | None
+    ) -> None:
+        span = f"{req.from_date:%d %b} - {req.to_date:%d %b}"
+        if action is Action.APPROVE and req.status is LeaveStatus.APPROVED:
+            await notify(
+                self.session,
+                req.employee_id,
+                "approved",
+                f"Leave approved by {by.name}",
+                span,
+                req.id,
+            )
+        elif action is Action.APPROVE:
+            nxt = next(s for s in req.steps if s.level == req.current_level)
+            await notify(
+                self.session,
+                req.employee_id,
+                "progress",
+                f"{by.name} approved - now with {nxt.approver.name}",
+                span,
+                req.id,
+            )
+            await notify(
+                self.session,
+                nxt.approver_id,
+                "approval_needed",
+                f"{req.employee.name}'s leave needs your sign-off",
+                span,
+                req.id,
+            )
+        elif action is Action.REJECT:
+            await notify(
+                self.session,
+                req.employee_id,
+                "rejected",
+                f"Leave rejected by {by.name}",
+                comment,
+                req.id,
+            )
+        else:
+            await notify(
+                self.session,
+                req.employee_id,
+                "info_requested",
+                f"{by.name} needs more information",
+                comment,
+                req.id,
+            )
+
     async def _load_for_update(
         self, request_id: int, user: User, expected_version: int | None
     ) -> LeaveRequest:
@@ -425,23 +556,33 @@ class LeaveService:
 
 
 # ---------------------------------------------------------------- pure helpers
-def can_view(req: LeaveRequest, viewer: User) -> bool:
+def can_view(req: LeaveRequest, viewer: User, acting_for: set[int] | None = None) -> bool:
     """Privacy rule (D-001): requester, approvers in the chain, and HR only."""
     return (
         viewer.role is Role.HR_ADMIN
         or req.employee_id == viewer.id
-        or any(s.approver_id == viewer.id for s in req.steps)
+        or any(s.approver_id == viewer.id or s.acted_by_id == viewer.id for s in req.steps)
+        or any(s.approver_id in (acting_for or set()) for s in req.steps)
     )
 
 
-def viewer_actions(req: LeaveRequest, viewer: User) -> list[Action]:
+def viewer_actions(
+    req: LeaveRequest, viewer: User, acting_for: set[int] | None = None
+) -> list[Action]:
     """What *this* viewer may do now - the UI renders exactly these buttons."""
     possible = allowed_actions(req.status)
     out: set[Action] = set()
     if req.employee_id == viewer.id:
         out |= possible & {Action.CANCEL, Action.RESPOND}
     step = _current_step(req)
-    if step and step.approver_id == viewer.id and req.employee_id != viewer.id:
+    mine = bool(
+        step and (step.approver_id == viewer.id or step.approver_id in (acting_for or set()))
+    )
+    already = any(
+        viewer.id in (s.approver_id, s.acted_by_id) and s.decision is StepDecision.APPROVED
+        for s in req.steps
+    )
+    if mine and not already and req.employee_id != viewer.id:
         out |= possible & APPROVER_ACTIONS
     order = list(Action)
     return sorted(out, key=order.index)
@@ -483,6 +624,7 @@ def _attachment(u: Upload, uploader_id: int) -> Attachment:
         size=len(u.content),
         content=u.content,
         uploaded_by=uploader_id,
+        sha256=hashlib.sha256(u.content).hexdigest(),
     )
 
 

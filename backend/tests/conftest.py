@@ -90,7 +90,8 @@ async def _clean(request: pytest.FixtureRequest) -> AsyncIterator[None]:
         # TRUNCATE doesn't fire the row-level append-only trigger.
         await conn.execute(
             text(
-                "TRUNCATE agent_runs, audit_logs, comments, attachments, approval_steps, "
+                "TRUNCATE notifications, blackout_periods, agent_runs, audit_logs, comments, "
+                "attachments, approval_steps, "
                 "leave_requests, departments, users RESTART IDENTITY CASCADE"
             )
         )

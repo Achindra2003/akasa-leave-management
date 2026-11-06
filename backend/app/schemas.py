@@ -31,6 +31,8 @@ class UserOut(ApiModel):
     title: str | None = None
     department: str | None = None
     manager_name: str | None = None
+    delegate_id: int | None = None
+    delegate_name: str | None = None
     is_approver: bool = False
 
 
@@ -67,6 +69,7 @@ class StepOut(ApiModel):
     decision: StepDecision
     comment: str | None
     decided_at: datetime | None
+    acted_by_name: str | None = None  # set when a delegate decided
 
 
 class AttachmentOut(ApiModel):
@@ -75,6 +78,9 @@ class AttachmentOut(ApiModel):
     content_type: str
     size: int
     created_at: datetime
+    verification: str = "PENDING"
+    verification_note: str | None = None
+    ai_check: dict[str, Any] | None = None
 
 
 class CommentOut(ApiModel):
@@ -104,6 +110,8 @@ class LeaveSummary(ApiModel):
     created_at: datetime
     updated_at: datetime
     attachment_count: int = 0
+    blackout_name: str | None = None
+    flagged_documents: int = 0
 
 
 class LeaveDetail(LeaveSummary):

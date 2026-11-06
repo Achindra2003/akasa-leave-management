@@ -29,7 +29,11 @@ async def get_current_user(
     user_id = decode_access_token(creds.credentials)
     user = await session.scalar(
         select(User)
-        .options(selectinload(User.department), selectinload(User.manager))
+        .options(
+            selectinload(User.department),
+            selectinload(User.manager),
+            selectinload(User.delegate),
+        )
         .where(User.id == user_id)
     )
     if user is None:

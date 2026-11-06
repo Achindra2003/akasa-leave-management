@@ -16,6 +16,7 @@ dependencies = [
     "pydantic-settings>=2.16.2",
     "pydantic[email]>=2.14.3",
     "pyjwt>=2.15.1",
+    "pypdf>=6.21.4",
     "python-multipart>=0.0.33",
     "sqlalchemy[asyncio]>=2.0",
     "structlog>=26.1.0",

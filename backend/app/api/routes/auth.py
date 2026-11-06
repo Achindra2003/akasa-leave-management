@@ -32,7 +32,11 @@ async def _is_approver(session: SessionDep, user: User) -> bool:
 async def login(body: LoginIn, session: SessionDep) -> TokenOut:
     user = await session.scalar(
         select(User)
-        .options(selectinload(User.department), selectinload(User.manager))
+        .options(
+            selectinload(User.department),
+            selectinload(User.manager),
+            selectinload(User.delegate),
+        )
         .where(User.email == body.email.lower())
     )
     if user is None or not verify_password(body.password, user.password_hash):

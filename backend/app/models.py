@@ -58,7 +58,11 @@ class User(TimestampMixin, Base):
         ForeignKey("departments.id", ondelete="SET NULL")
     )
 
+    # Out-of-office delegate: acts on this user's approvals while they are on approved leave.
+    delegate_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+
     manager: Mapped[User | None] = relationship(remote_side=[id], foreign_keys=[manager_id])
+    delegate: Mapped[User | None] = relationship(remote_side=[id], foreign_keys=[delegate_id])
     department: Mapped[Department | None] = relationship(foreign_keys=[department_id])
 
 
@@ -94,6 +98,9 @@ class LeaveRequest(TimestampMixin, Base):
     current_level: Mapped[int | None] = mapped_column(Integer)
     info_requested_level: Mapped[int | None] = mapped_column(Integer)
     channel: Mapped[Channel] = mapped_column(_enum(Channel), default=Channel.UI)
+    blackout_id: Mapped[int | None] = mapped_column(
+        ForeignKey("blackout_periods.id", ondelete="SET NULL")
+    )
     # Optimistic locking: concurrent approver actions can't both win.
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     updated_at: Mapped[datetime] = mapped_column(
@@ -103,6 +110,7 @@ class LeaveRequest(TimestampMixin, Base):
     __mapper_args__ = {"version_id_col": version}  # noqa: RUF012
 
     employee: Mapped[User] = relationship(foreign_keys=[employee_id])
+    blackout: Mapped[BlackoutPeriod | None] = relationship()
     steps: Mapped[list[ApprovalStep]] = relationship(
         back_populates="request", order_by="ApprovalStep.level", cascade="all, delete-orphan"
     )
@@ -128,9 +136,12 @@ class ApprovalStep(Base):
     )
     comment: Mapped[str | None] = mapped_column(Text)
     decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Who actually decided - differs from approver_id when a delegate acted.
+    acted_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
 
     request: Mapped[LeaveRequest] = relationship(back_populates="steps")
-    approver: Mapped[User] = relationship()
+    approver: Mapped[User] = relationship(foreign_keys=[approver_id])
+    acted_by: Mapped[User | None] = relationship(foreign_keys=[acted_by_id])
 
 
 class Attachment(TimestampMixin, Base):
@@ -145,6 +156,15 @@ class Attachment(TimestampMixin, Base):
     size: Mapped[int] = mapped_column(Integer)
     content: Mapped[bytes] = mapped_column(LargeBinary, deferred=True)  # D-007
     uploaded_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    # Verification (D-018): fingerprint for reuse detection, AI pre-check, human decision.
+    sha256: Mapped[str | None] = mapped_column(String(64), index=True)
+    ai_check: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    verification: Mapped[str] = mapped_column(
+        String(16), default="PENDING", server_default="PENDING"
+    )  # VERIFIED|FLAGGED
+    verified_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    verification_note: Mapped[str | None] = mapped_column(Text)
 
     request: Mapped[LeaveRequest] = relationship(back_populates="attachments")
 
@@ -199,3 +219,36 @@ class AgentRun(TimestampMixin, Base):
     model: Mapped[str] = mapped_column(String(120))
     latency_ms: Mapped[int] = mapped_column(Integer, default=0)
     error: Mapped[str | None] = mapped_column(Text)
+
+
+class BlackoutPeriod(TimestampMixin, Base):
+    """Windows where leave needs HOD review regardless of length (C-checks, peak season)."""
+
+    __tablename__ = "blackout_periods"
+    __table_args__ = (CheckConstraint("to_date >= from_date", name="date_order"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(120))
+    reason: Mapped[str | None] = mapped_column(Text)
+    from_date: Mapped[date] = mapped_column(Date)
+    to_date: Mapped[date] = mapped_column(Date)
+    department_id: Mapped[int | None] = mapped_column(
+        ForeignKey("departments.id", ondelete="CASCADE")
+    )  # NULL = organisation-wide
+    created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+
+    department: Mapped[Department | None] = relationship()
+
+
+class Notification(TimestampMixin, Base):
+    __tablename__ = "notifications"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    kind: Mapped[str] = mapped_column(String(40))
+    title: Mapped[str] = mapped_column(String(200))
+    body: Mapped[str | None] = mapped_column(Text)
+    request_id: Mapped[int | None] = mapped_column(
+        ForeignKey("leave_requests.id", ondelete="CASCADE")
+    )
+    read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

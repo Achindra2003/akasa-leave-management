@@ -17,6 +17,15 @@ if config.config_file_name is not None and not config.attributes.get("skip_loggi
 
 target_metadata = Base.metadata
 
+# Tables owned by LangGraph's checkpointer (created by saver.setup()), not by our models.
+# Without this, autogenerate would emit DROP TABLE for them.
+_EXTERNAL_TABLES = {"checkpoints", "checkpoint_writes", "checkpoint_blobs", "checkpoint_migrations"}
+
+
+def include_object(obj, name, type_, reflected, compare_to):  # type: ignore[no-untyped-def]
+    table = name if type_ == "table" else getattr(getattr(obj, "table", None), "name", None)
+    return table not in _EXTERNAL_TABLES
+
 
 def _url() -> str:
     return config.attributes.get("database_url") or get_settings().database_url
@@ -29,7 +38,9 @@ def run_migrations_offline() -> None:
 
 
 def do_run_migrations(connection: Connection) -> None:
-    context.configure(connection=connection, target_metadata=target_metadata)
+    context.configure(
+        connection=connection, target_metadata=target_metadata, include_object=include_object
+    )
     with context.begin_transaction():
         context.run_migrations()
 

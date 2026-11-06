@@ -23,6 +23,8 @@ def user_out(u: User, *, is_approver: bool = False) -> UserOut:
         title=u.title,
         department=u.department.name if u.department else None,
         manager_name=u.manager.name if u.manager else None,
+        delegate_id=u.delegate_id,
+        delegate_name=u.delegate.name if u.delegate else None,
         is_approver=is_approver,
     )
 
@@ -46,10 +48,12 @@ def leave_summary(r: LeaveRequest) -> LeaveSummary:
         created_at=r.created_at,
         updated_at=r.updated_at,
         attachment_count=len(r.attachments),
+        blackout_name=r.blackout.name if r.blackout else None,
+        flagged_documents=sum(a.verification == "FLAGGED" for a in r.attachments),
     )
 
 
-def leave_detail(r: LeaveRequest, viewer: User) -> LeaveDetail:
+def leave_detail(r: LeaveRequest, viewer: User, acting_for: set[int] | None = None) -> LeaveDetail:
     return LeaveDetail(
         **leave_summary(r).model_dump(),
         steps=[
@@ -61,10 +65,25 @@ def leave_detail(r: LeaveRequest, viewer: User) -> LeaveDetail:
                 decision=s.decision,
                 comment=s.comment,
                 decided_at=s.decided_at,
+                acted_by_name=s.acted_by.name
+                if s.acted_by and s.acted_by_id != s.approver_id
+                else None,
             )
             for s in r.steps
         ],
-        attachments=[AttachmentOut.model_validate(a) for a in r.attachments],
+        attachments=[
+            AttachmentOut(
+                id=a.id,
+                filename=a.filename,
+                content_type=a.content_type,
+                size=a.size,
+                created_at=a.created_at,
+                verification=a.verification,
+                verification_note=a.verification_note,
+                ai_check=a.ai_check,
+            )
+            for a in r.attachments
+        ],
         comments=[
             CommentOut(
                 id=c.id,
@@ -76,7 +95,7 @@ def leave_detail(r: LeaveRequest, viewer: User) -> LeaveDetail:
             )
             for c in r.comments
         ],
-        allowed_actions=viewer_actions(r, viewer),
+        allowed_actions=viewer_actions(r, viewer, acting_for),
     )
 
 

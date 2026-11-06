@@ -33,6 +33,8 @@ class Settings(BaseSettings):
     leave_escalation_threshold_days: int = 3
     leave_max_span_days: int = 30
     max_upload_mb: int = 5
+    # Coverage (D-021): at least this share of a team must be available on any day.
+    min_team_available_ratio: float = 0.5
 
     # AI (D-012): provider-agnostic. "fake" = deterministic, offline, no key needed.
     llm_provider: Literal["groq", "openai_compat", "fake"] = "fake"

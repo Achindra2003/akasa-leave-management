@@ -59,10 +59,10 @@ def create_app() -> FastAPI:
     )
     register_error_handlers(app)
 
-    from app.api.routes import ai
+    from app.api.routes import ai, extras
 
     api = APIRouter(prefix="/api/v1")
-    for r in (auth.router, leaves.router, admin.router, ai.router):
+    for r in (auth.router, leaves.router, admin.router, ai.router, extras.router):
         api.include_router(r)
     app.include_router(api)
 

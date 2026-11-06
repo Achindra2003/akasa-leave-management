@@ -25,11 +25,13 @@ class AIRuntime:
         self.assistant: Any = None
         self.copilot: Any = None
         self.info: ModelInfo | None = None
+        self.model: Any = None
         self.checkpointer_kind = "none"
 
     async def start(self, *, use_postgres_checkpointer: bool | None = None) -> None:
         settings = get_settings()
         model, self.info = get_chat_model(settings)
+        self.model = model
         self._stack = AsyncExitStack()
         if use_postgres_checkpointer is None:
             use_postgres_checkpointer = settings.environment == "production"

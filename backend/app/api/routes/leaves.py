@@ -2,7 +2,7 @@ from datetime import date
 from typing import Annotated
 from urllib.parse import quote
 
-from fastapi import APIRouter, File, Form, Response, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, File, Form, Response, UploadFile, status
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
@@ -16,6 +16,13 @@ from app.schemas import AuditOut, DecisionIn, LeaveDetail, LeaveSummary, PolicyO
 from app.services.leave_service import Actor, Upload
 
 router = APIRouter(tags=["leaves"])
+
+
+async def _run_checks(request_id: int) -> None:
+    from app.api.routes.extras import run_document_checks
+
+    await run_document_checks(request_id)
+
 
 _CHUNK = 64 * 1024
 
@@ -53,6 +60,7 @@ async def policy() -> PolicyOut:
 @router.post("/leaves", response_model=LeaveDetail, status_code=status.HTTP_201_CREATED)
 async def apply_for_leave(
     user: CurrentUser,
+    background: BackgroundTasks,
     svc: LeaveServiceDep,
     from_date: Annotated[date, Form(alias="fromDate")],
     to_date: Annotated[date, Form(alias="toDate")],
@@ -71,7 +79,9 @@ async def apply_for_leave(
         reason=reason,
         uploads=await read_uploads(documents),
     )
-    return leave_detail(req, user)
+    if req.attachments:
+        background.add_task(_run_checks, req.id)
+    return leave_detail(req, user, await svc.acting_for(user))
 
 
 @router.get("/leaves/mine", response_model=list[LeaveSummary])
@@ -81,7 +91,7 @@ async def my_leaves(user: CurrentUser, svc: LeaveServiceDep) -> list[LeaveSummar
 
 @router.get("/leaves/{request_id}", response_model=LeaveDetail)
 async def get_leave(request_id: int, user: CurrentUser, svc: LeaveServiceDep) -> LeaveDetail:
-    return leave_detail(await svc.get(request_id, user), user)
+    return leave_detail(await svc.get(request_id, user), user, await svc.acting_for(user))
 
 
 @router.get("/leaves/{request_id}/timeline", response_model=list[AuditOut])
@@ -104,13 +114,14 @@ async def cancel_leave(
     request_id: int, user: CurrentUser, svc: LeaveServiceDep, body: DecisionIn | None = None
 ) -> LeaveDetail:
     req = await svc.cancel(Actor(user), request_id, expected_version=body.version if body else None)
-    return leave_detail(req, user)
+    return leave_detail(req, user, await svc.acting_for(user))
 
 
 @router.post("/leaves/{request_id}/respond", response_model=LeaveDetail)
 async def respond_to_info_request(
     request_id: int,
     user: CurrentUser,
+    background: BackgroundTasks,
     svc: LeaveServiceDep,
     comment: Annotated[str, Form(max_length=1000)],
     version: Annotated[int | None, Form()] = None,
@@ -123,7 +134,9 @@ async def respond_to_info_request(
         uploads=await read_uploads(documents),
         expected_version=version,
     )
-    return leave_detail(req, user)
+    if req.attachments:
+        background.add_task(_run_checks, req.id)
+    return leave_detail(req, user, await svc.acting_for(user))
 
 
 # ---- approver actions ------------------------------------------------------
@@ -144,7 +157,7 @@ def _decision_route(action: Action):  # type: ignore[no-untyped-def]
         req = await svc.decide(
             Actor(user), request_id, action, comment=body.comment, expected_version=body.version
         )
-        return leave_detail(req, user)
+        return leave_detail(req, user, await svc.acting_for(user))
 
     return handler
 
