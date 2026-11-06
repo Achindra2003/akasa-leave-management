@@ -9,8 +9,10 @@ from sqlalchemy.orm import selectinload
 from app.api.deps import CurrentUser, LeaveServiceDep, SessionDep
 from app.api.presenters import audit_out, leave_detail, leave_summary
 from app.core.config import get_settings
+from app.core.hardening import content_matches_type
 from app.domain.enums import Action
 from app.domain.errors import ValidationFailed
+from app.domain.policy import ALLOWED_DOCUMENT_TYPES
 from app.models import AuditLog
 from app.schemas import AuditOut, DecisionIn, LeaveDetail, LeaveSummary, PolicyOut
 from app.services.leave_service import Actor, Upload
@@ -41,7 +43,11 @@ async def read_uploads(files: list[UploadFile] | None) -> list[Upload]:
                 mb = limit // (1024 * 1024)
                 msg = f"'{f.filename}' is larger than {mb} MB."
                 raise ValidationFailed(msg, details={"fields": {"documents": msg}})
-        out.append(Upload(f.filename, f.content_type or "application/octet-stream", bytes(buf)))
+        ctype = f.content_type or "application/octet-stream"
+        if ctype in ALLOWED_DOCUMENT_TYPES and not content_matches_type(bytes(buf), ctype):
+            msg = f"'{f.filename}' doesn't look like a real {ctype.split('/')[-1].upper()} file."
+            raise ValidationFailed(msg, details={"fields": {"documents": msg}})
+        out.append(Upload(f.filename, ctype, bytes(buf)))
     return out
 
 
@@ -190,6 +196,9 @@ async def download_attachment(
         headers={
             "Content-Disposition": f"{disposition}; filename*=UTF-8''{quote(att.filename)}",
             "X-Content-Type-Options": "nosniff",
+            # Served documents can never run script on our origin.
+            "Content-Security-Policy": "sandbox; default-src 'none'; img-src 'self'; "
+            "style-src 'unsafe-inline'",
             "Cache-Control": "private, no-store",
         },
     )

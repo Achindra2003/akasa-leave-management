@@ -188,7 +188,7 @@ async def test_request_info_round_trip(client: httpx.AsyncClient, org: Org) -> N
         f"/leaves/{rid}/respond",
         headers=org.h("emp"),
         data={"comment": "Apollo, report attached"},
-        files=[("documents", ("report.png", b"\x89PNG..", "image/png"))],
+        files=[("documents", ("report.png", b"\x89PNG\r\n\x1a\n" + b"\0" * 32, "image/png"))],
     )
     assert r.status_code == 200, r.text
     assert r.json()["status"] == "PENDING_HOD"  # back to whoever asked

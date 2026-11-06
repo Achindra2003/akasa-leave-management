@@ -16,6 +16,7 @@ from app.api.deps import CurrentUser, HRUser, LeaveServiceDep, SessionDep
 from app.core import clock
 from app.core.config import get_settings
 from app.core.db import get_sessionmaker
+from app.core.hardening import ai_limiter
 from app.core.logging import log
 from app.domain.enums import Channel, Role
 from app.domain.errors import Forbidden, NotFound, ValidationFailed
@@ -183,6 +184,7 @@ def _live() -> bool:
 async def check_document(
     attachment_id: int, user: CurrentUser, svc: LeaveServiceDep, session: SessionDep
 ) -> dict[str, Any]:
+    ai_limiter.check(f"user:{user.id}")
     att, req = await _attachment_for_reviewer(svc, user, attachment_id)
     await session.refresh(att, ["content"])
     att.ai_check = await analyse(session, att, req, model=_model(), live=_live())

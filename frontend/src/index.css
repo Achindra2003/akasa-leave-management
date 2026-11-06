@@ -134,3 +134,5 @@ button, [role="button"], [role="tab"], label[for] {
 @media (prefers-reduced-motion: reduce) {
   .settle, .bump { animation: fade-in 150ms ease both; }
 }
+/* Programmatically focused containers (dialogs, <main> after skip link) don't need a ring. */
+[tabindex="-1"]:focus-visible { outline: none; }

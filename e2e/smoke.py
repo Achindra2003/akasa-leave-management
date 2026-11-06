@@ -32,6 +32,14 @@ def sign_out(page):
     page.wait_for_url("**/login")
 
 
+def close_sheet(page):
+    """Wait for the sheet to be open, close it with Escape, and assert it closed."""
+    dialog = page.get_by_role("dialog")
+    expect(dialog).to_be_visible()
+    page.keyboard.press("Escape")
+    expect(dialog).to_be_hidden()
+
+
 def login(page, name):
     page.goto(f"{BASE}/login")
     page.get_by_role("button", name=name).click()
@@ -68,7 +76,7 @@ with sync_playwright() as p:
         )
         page.get_by_role("button", name="Submit request").click()
         expect(page.get_by_text("Request #").first).to_be_visible()
-        page.keyboard.press("Escape")
+        close_sheet(page)
         page.screenshot(path=OUT / "03-employee-dashboard.png")
 
         # Assistant drafts a leave
@@ -97,7 +105,7 @@ with sync_playwright() as p:
         page.screenshot(path=OUT / "05-approver-sheet-copilot.png")
         page.get_by_role("button", name="Approve").click()
         expect(page.get_by_text("Awaiting HOD").first).to_be_visible()
-        page.keyboard.press("Escape")
+        close_sheet(page)
 
         # HOD approves
         sign_out(page)
@@ -105,7 +113,7 @@ with sync_playwright() as p:
         page.get_by_text(REASON).click()
         page.get_by_role("button", name="Approve").click()
         expect(page.get_by_text("Approved").first).to_be_visible()
-        page.keyboard.press("Escape")
+        close_sheet(page)
 
         # Meera covers Vikram (on leave today): sees his queue, verifies documents
         sign_out(page)
@@ -116,7 +124,7 @@ with sync_playwright() as p:
         page.screenshot(path=OUT / "08-delegate-doc-verification.png")
         page.get_by_role("button", name="Verify", exact=True).click()
         expect(page.get_by_text("Verified", exact=True).first).to_be_visible()
-        page.keyboard.press("Escape")
+        close_sheet(page)
         page.get_by_role("link", name="Approvals").click()
         page.get_by_role("tab", name="Handled by me").click()
         page.get_by_role("tab", name="Pending", exact=False).click()
@@ -130,7 +138,7 @@ with sync_playwright() as p:
         page.screenshot(path=OUT / "09-team-calendar.png")
         page.get_by_role("button", name="Notifications", exact=False).click()
         page.screenshot(path=OUT / "10-notifications.png")
-        page.keyboard.press("Escape")
+        close_sheet(page)
 
         # HR overview + audit
         sign_out(page)

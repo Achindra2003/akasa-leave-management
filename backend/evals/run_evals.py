@@ -103,7 +103,10 @@ async def _prepare_db() -> int:
 def _check(sc: dict[str, Any], out: dict[str, Any]) -> list[str]:
     exp, fails = sc["expect"], []
     draft = out["draft"]
-    if "draft" in exp:
+    clarified = not draft and out["reply"].rstrip().endswith("?")
+    if "draft" in exp and exp.get("or_clarify") and clarified:
+        pass  # ambiguous request answered with a clarifying question: acceptable
+    elif "draft" in exp:
         if not draft:
             fails.append("expected a draft, got none")
         else:

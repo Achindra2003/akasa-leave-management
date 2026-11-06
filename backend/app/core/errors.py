@@ -57,7 +57,10 @@ def register_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(DomainError)
     async def _domain(_: Request, exc: DomainError) -> JSONResponse:
         extra = dict(exc.details)
-        return problem(exc.status_code, exc.code, exc.title, exc.message, extra)
+        resp = problem(exc.status_code, exc.code, exc.title, exc.message, extra)
+        if exc.status_code == 429 and "retryAfter" in extra:
+            resp.headers["Retry-After"] = str(extra["retryAfter"])
+        return resp
 
     @app.exception_handler(RequestValidationError)
     async def _validation(_: Request, exc: RequestValidationError) -> JSONResponse:

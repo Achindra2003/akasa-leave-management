@@ -15,6 +15,7 @@ from app.api.routes import admin, auth, leaves
 from app.core.config import get_settings
 from app.core.db import dispose_engine, get_engine, get_sessionmaker
 from app.core.errors import register_error_handlers
+from app.core.hardening import SecurityHeadersMiddleware
 from app.core.logging import RequestContextMiddleware, configure_logging, log
 
 
@@ -49,6 +50,7 @@ def create_app() -> FastAPI:
         openapi_url="/api/openapi.json",
     )
     app.add_middleware(RequestContextMiddleware)
+    app.add_middleware(SecurityHeadersMiddleware, hsts=settings.environment == "production")
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,

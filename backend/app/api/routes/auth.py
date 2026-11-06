@@ -1,10 +1,11 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from sqlalchemy import exists, or_, select
 from sqlalchemy.orm import selectinload
 
 from app.api.deps import CurrentUser, SessionDep
 from app.api.presenters import user_out
 from app.core.config import get_settings
+from app.core.hardening import client_ip, login_limiter
 from app.core.security import create_access_token, verify_password
 from app.domain.enums import Channel, Role
 from app.domain.errors import AuthenticationFailed, NotFound
@@ -29,7 +30,8 @@ async def _is_approver(session: SessionDep, user: User) -> bool:
 
 
 @router.post("/login", response_model=TokenOut)
-async def login(body: LoginIn, session: SessionDep) -> TokenOut:
+async def login(body: LoginIn, session: SessionDep, request: Request) -> TokenOut:
+    login_limiter.check(f"{client_ip(request)}|{body.email.lower()}")
     user = await session.scalar(
         select(User)
         .options(

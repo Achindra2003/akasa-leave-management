@@ -159,6 +159,8 @@ async def draft_leave_request(
             "ok": True,
             "draft": {
                 "fromDate": f.isoformat(),
+                "fromWeekday": f.strftime("%A"),
+                "toWeekday": t.strftime("%A"),
                 "toDate": t.isoformat(),
                 "reason": reason.strip(),
                 "totalDays": total,

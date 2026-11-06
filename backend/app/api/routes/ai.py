@@ -17,6 +17,7 @@ from app.ai.runtime import ai_runtime
 from app.api.deps import CurrentUser, LeaveServiceDep, SessionDep
 from app.core import clock
 from app.core.config import get_settings
+from app.core.hardening import ai_limiter
 from app.core.logging import log
 from app.domain.enums import Role
 from app.domain.errors import DomainError, Forbidden, NotFound
@@ -176,6 +177,7 @@ async def _run(
 
 @router.post("/assistant/chat", response_model=ChatOut)
 async def chat(body: ChatIn, user: CurrentUser, session: SessionDep) -> ChatOut:
+    ai_limiter.check(f"user:{user.id}")
     thread_id = _own_thread(user, body.thread_id)
     cfg = _config(user, thread_id)
     if ai_runtime.assistant is not None:
@@ -193,6 +195,7 @@ async def chat(body: ChatIn, user: CurrentUser, session: SessionDep) -> ChatOut:
 
 @router.post("/assistant/confirm", response_model=ChatOut)
 async def confirm(body: ConfirmIn, user: CurrentUser, session: SessionDep) -> ChatOut:
+    ai_limiter.check(f"user:{user.id}")
     """Resume the paused graph with the human's decision (approve -> submit)."""
     thread_id = _own_thread(user, body.thread_id)
     if ai_runtime.assistant is None:
@@ -213,6 +216,7 @@ async def confirm(body: ConfirmIn, user: CurrentUser, session: SessionDep) -> Ch
 async def copilot(
     request_id: int, user: CurrentUser, svc: LeaveServiceDep, session: SessionDep
 ) -> CopilotOut:
+    ai_limiter.check(f"user:{user.id}")
     req = await svc.get(request_id, user)
     is_approver = any(s.approver_id == user.id for s in req.steps)
     if not (is_approver or user.role is Role.HR_ADMIN) or req.employee_id == user.id:

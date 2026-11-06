@@ -82,6 +82,10 @@ async def _clean(request: pytest.FixtureRequest) -> AsyncIterator[None]:
     if "app" not in request.fixturenames:
         yield
         return
+    from app.core.hardening import ai_limiter, login_limiter
+
+    login_limiter.reset()
+    ai_limiter.reset()
     from sqlalchemy import text
 
     from app.core.db import get_engine
