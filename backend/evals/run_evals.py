@@ -28,14 +28,14 @@ os.environ.setdefault("DATABASE_URL", "postgresql+psycopg://leave:leave@localhos
 os.environ.setdefault("SEED_DEMO_DATA", "false")
 os.environ.setdefault("LOG_LEVEL", "WARNING")
 
-from langchain_core.messages import AIMessage, HumanMessage  # noqa: E402
-from langgraph.checkpoint.memory import InMemorySaver  # noqa: E402
+from langchain_core.messages import AIMessage, HumanMessage
+from langgraph.checkpoint.memory import InMemorySaver
 
-from app.ai.assistant import build_assistant_graph  # noqa: E402
-from app.ai.llm import get_chat_model  # noqa: E402
-from app.ai.tools import ASSISTANT_TOOLS  # noqa: E402
-from app.core.compat import use_compatible_event_loop  # noqa: E402
-from app.core.config import get_settings  # noqa: E402
+from app.ai.assistant import build_assistant_graph
+from app.ai.llm import get_chat_model
+from app.ai.tools import ASSISTANT_TOOLS
+from app.core.compat import use_compatible_event_loop
+from app.core.config import get_settings
 
 HERE = Path(__file__).parent
 ALLOWED_TOOLS = {t.name for t in ASSISTANT_TOOLS}
@@ -69,17 +69,31 @@ async def _prepare_db() -> int:
         dept = Department(name="Engineering")
         s.add(dept)
         await s.flush()
-        hod = User(name="Hod", email="hod@e.demo", role=Role.HOD, password_hash=pw,
-                   department_id=dept.id)
+        hod = User(
+            name="Hod", email="hod@e.demo", role=Role.HOD, password_hash=pw, department_id=dept.id
+        )
         hr = User(name="Hr", email="hr@e.demo", role=Role.HR_ADMIN, password_hash=pw)
         s.add_all([hod, hr])
         await s.flush()
-        mgr = User(name="Mgr", email="mgr@e.demo", role=Role.MANAGER, password_hash=pw,
-                   department_id=dept.id, manager_id=hod.id)
+        mgr = User(
+            name="Mgr",
+            email="mgr@e.demo",
+            role=Role.MANAGER,
+            password_hash=pw,
+            department_id=dept.id,
+            manager_id=hod.id,
+        )
         s.add(mgr)
         await s.flush()
-        emp = User(name="Eval User", email="emp@e.demo", role=Role.EMPLOYEE, password_hash=pw,
-                   department_id=dept.id, manager_id=mgr.id, title="Engineer")
+        emp = User(
+            name="Eval User",
+            email="emp@e.demo",
+            role=Role.EMPLOYEE,
+            password_hash=pw,
+            department_id=dept.id,
+            manager_id=mgr.id,
+            title="Engineer",
+        )
         s.add(emp)
         dept.hod_id = hod.id
         await s.commit()
@@ -98,7 +112,10 @@ def _check(sc: dict[str, Any], out: dict[str, Any]) -> list[str]:
                     fails.append(f"draft.{k}={draft.get(k)!r} expected {v!r}")
     if exp.get("no_draft") and out["awaiting_confirmation"]:
         fails.append("produced a submittable draft but shouldn't have")
-    if "awaiting_confirmation" in exp and out["awaiting_confirmation"] != exp["awaiting_confirmation"]:
+    if (
+        "awaiting_confirmation" in exp
+        and out["awaiting_confirmation"] != exp["awaiting_confirmation"]
+    ):
         fails.append(f"awaiting_confirmation={out['awaiting_confirmation']}")
     for t in exp.get("tools_include", []):
         if t not in out["tools"]:
@@ -126,10 +143,16 @@ async def main() -> int:
 
     rows, results = [], []
     for sc in data["scenarios"]:
-        cfg = {"configurable": {"thread_id": uuid.uuid4().hex, "user_id": user_id,
-                                "user_name": "Eval User", "user_title": "Engineer",
-                                "today": data["today"] + "T10:00:00+05:30"},
-               "recursion_limit": settings.agent_max_steps * 2 + 2}
+        cfg = {
+            "configurable": {
+                "thread_id": uuid.uuid4().hex,
+                "user_id": user_id,
+                "user_name": "Eval User",
+                "user_title": "Engineer",
+                "today": data["today"] + "T10:00:00+05:30",
+            },
+            "recursion_limit": settings.agent_max_steps * 2 + 2,
+        }
         t0 = time.perf_counter()
         err = None
         try:
@@ -152,19 +175,35 @@ async def main() -> int:
             "latency_ms": int((time.perf_counter() - t0) * 1000),
         }
         fails = _check(sc, out) + ([f"error: {err}"] if err else [])
-        results.append({"id": sc["id"], "input": sc["input"], "pass": not fails,
-                        "failures": fails, **out})
-        rows.append(f"| `{sc['id']}` | {'✅' if not fails else '❌'} | {', '.join(tools) or '-'} "
-                    f"| {out['latency_ms']} | {'; '.join(fails) or ''} |")
+        results.append(
+            {"id": sc["id"], "input": sc["input"], "pass": not fails, "failures": fails, **out}
+        )
+        rows.append(
+            f"| `{sc['id']}` | {'✅' if not fails else '❌'} | {', '.join(tools) or '-'} "
+            f"| {out['latency_ms']} | {'; '.join(fails) or ''} |"
+        )
 
     passed = sum(r["pass"] for r in results)
     safety = sum(any(f.startswith("SAFETY") for f in r["failures"]) for r in results)
     (HERE / f"results-{info.provider}.json").write_text(
-        json.dumps({"provider": info.provider, "model": info.model, "today": data["today"],
-                    "passed": passed, "total": len(results), "results": results}, indent=2,
-                   default=str), encoding="utf-8")
-    print(f"\n### {info.provider} / {info.model}: {passed}/{len(results)} passed, "
-          f"{safety} safety violations\n")
+        json.dumps(
+            {
+                "provider": info.provider,
+                "model": info.model,
+                "today": data["today"],
+                "passed": passed,
+                "total": len(results),
+                "results": results,
+            },
+            indent=2,
+            default=str,
+        ),
+        encoding="utf-8",
+    )
+    print(
+        f"\n### {info.provider} / {info.model}: {passed}/{len(results)} passed, "
+        f"{safety} safety violations\n"
+    )
     print("| scenario | result | tools called | ms | notes |\n|---|---|---|---|---|")
     print("\n".join(rows))
     return 0 if safety == 0 and (passed == len(results) or info.live) else 1
