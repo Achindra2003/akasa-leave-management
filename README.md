@@ -9,14 +9,32 @@ A leave portal where employees apply, managers and HODs approve, and every step 
 
 <p align="center"><img src="docs/screenshots/05-approver-sheet-copilot.png" width="820" alt="Approver reviewing a request with the AI co-pilot"></p>
 
+## Live demo
+
+**https://akasa-leave.onrender.com** (Render + Supabase Postgres + Groq `gpt-oss-120b`)
+
+Click any demo account on the sign-in page (password `Akasa@2026`). The free instance sleeps when idle, so **the first load can take 30-60 s**; after that it's fast.
+
+| | |
+|---|---|
+| Source | https://github.com/Achindra2003/akasa-leave-management |
+| API docs (Swagger) | https://akasa-leave.onrender.com/api/docs |
+| Verified features | [`docs/FEATURE_SWEEP.md`](docs/FEATURE_SWEEP.md): **39/39** features driven in Chrome, with screenshots |
+
 ---
 
-## Run it (one command)
+## Run it locally (one command)
+
+Requires Docker Desktop (or Docker Engine with Compose v2).
 
 ```bash
 docker compose up --build
 ```
-Open **http://localhost:8000** and click any demo account. No setup, keys or seed scripts are needed.
+Open **http://localhost:8000** and click any demo account. No setup, keys or seed scripts are needed: Postgres starts, migrations run, and a demo airline org is seeded automatically.
+
+```bash
+docker compose down -v      # stop and wipe the demo data (next `up` reseeds a fresh org)
+```
 
 | Account | Role | Try this |
 |---|---|---|
@@ -174,9 +192,11 @@ flowchart LR
 | Layer | What | Command |
 |---|---|---|
 | Unit (55) | Day counting, validation, state machine, routing edge cases | `cd backend && uv run pytest tests/unit` |
-| Integration (51) | Real Postgres via HTTP: full workflows, RBAC/privacy, **5 concurrent identical submits → exactly 1 succeeds**, optimistic locking, append-only audit, document access, AI interrupt/confirm/discard, prompt-injection inertness (chat *and* document text), blackouts, delegation window, notifications, coverage, reuse detection | `make test` |
+| Integration (58) | Real Postgres via HTTP: full workflows, RBAC/privacy, **5 concurrent identical submits → exactly 1 succeeds**, optimistic locking, append-only audit, document access, AI interrupt/confirm/discard, prompt-injection inertness (chat *and* document text), blackouts, delegation window, notifications, coverage, reuse detection | `make test` |
 | Agent evals (12) | NL → draft accuracy, trajectory, safety (offline or live model) | `make eval` |
 | E2E | Headless browser drives Employee → Manager → HOD → delegate → HR (coverage, doc verification, team calendar, blackouts) on desktop and mobile | `make e2e` |
+| Feature sweep | All 39 features in Chrome, logged step by step with screenshots ([FEATURE_SWEEP.md](docs/FEATURE_SWEEP.md)) | `python e2e/feature_sweep.py` |
+| Production check | Non-destructive verification of the live deployment: auth, RBAC, security headers, upload sniffing, rate limits, live AI, load | `python e2e/prod_check.py <url>` |
 | Static | ruff, strict TypeScript | `make lint` |
 
 CI runs all of these on every push, including `docker compose up` and the E2E against the built image.
@@ -192,6 +212,8 @@ Tests run against **real Postgres, not SQLite**. The overlap guarantee, row vers
 | [`docs/RESEARCH.md`](docs/RESEARCH.md) | How production leave systems and HR agents are built (with sources) and what we took from them |
 | [`docs/DECISIONS.md`](docs/DECISIONS.md) | Every key decision: context, options, choice, why, trade-off |
 | [`docs/EVALS.md`](docs/EVALS.md) | Agent eval method and results, including what failed and how it was fixed |
+| [`docs/SECURITY_AND_SCALE.md`](docs/SECURITY_AND_SCALE.md) | Security posture and scalability, measured on the live deployment, with known gaps stated plainly |
+| [`docs/FEATURE_SWEEP.md`](docs/FEATURE_SWEEP.md) | Step-by-step log of every feature exercised in Chrome |
 | [`docs/design-review/DESIGN_REVIEW.md`](docs/design-review/DESIGN_REVIEW.md) | Visual review at 375/768/1280 and the UI quality passes (D-024) |
 | [`docs/AI_USAGE.md`](docs/AI_USAGE.md) | How AI tools were used to *build* this, and where they were wrong |
 | [`docs/WORKLOG.md`](docs/WORKLOG.md) | Timestamped log of the time-boxed build |

@@ -38,3 +38,7 @@ Thumbs.db
 frontend/openapi.json
 docs/screenshots/failure.png
 backend/evals/results-*.json
+
+# Local conversation exports & deliverable archives
+2026-*.txt
+*.zip

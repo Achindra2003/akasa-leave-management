@@ -29,14 +29,14 @@ export function RequestSheet({ id, onClose }: { id: number | null; onClose: () =
           tabIndex={-1}
           className="fixed inset-y-0 right-0 z-50 flex w-full max-w-[560px] flex-col bg-sky shadow-float outline-none data-[state=open]:animate-[sheet-in_260ms_var(--ease-out-quint)] sm:inset-y-2 sm:right-2 sm:rounded-[var(--radius-sheet)]"
         >
-          {id != null && <SheetBody id={id} onClose={onClose} />}
+          {id != null && <SheetBody id={id} />}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
   )
 }
 
-function SheetBody({ id, onClose }: { id: number; onClose: () => void }) {
+function SheetBody({ id }: { id: number }) {
   const { user } = useAuth()
   const leave = useLeave(id)
   const d = leave.data
@@ -92,7 +92,9 @@ function SheetBody({ id, onClose }: { id: number; onClose: () => void }) {
             {isApprover && <TeamCoverage leave={d} />}
             {isApprover && d.allowedActions.length > 0 && <CopilotCard id={id} />}
 
-            {d.allowedActions.length > 0 && <ActionPanel leave={d} onDone={(a) => a === 'CANCEL' && onClose()} />}
+            {/* After any decision the sheet stays open: the status badge settling into its new
+                state (and the toast) is the confirmation. */}
+            {d.allowedActions.length > 0 && <ActionPanel leave={d} />}
 
             <DocumentsSection leave={d} reviewer={isApprover} />
 
@@ -105,7 +107,7 @@ function SheetBody({ id, onClose }: { id: number; onClose: () => void }) {
   )
 }
 
-function ActionPanel({ leave, onDone }: { leave: LeaveDetail; onDone: (a: Action) => void }) {
+function ActionPanel({ leave }: { leave: LeaveDetail }) {
   const [active, setActive] = useState<Action | null>(null)
   const [comment, setComment] = useState('')
   const [files, setFiles] = useState<File[]>([])
@@ -123,7 +125,7 @@ function ActionPanel({ leave, onDone }: { leave: LeaveDetail; onDone: (a: Action
     mutate.mutate(
       { action, comment, version: leave.version, files },
       {
-        onSuccess: () => { setComment(''); setFiles([]); setActive(null); onDone(action) },
+        onSuccess: () => { setComment(''); setFiles([]); setActive(null) },
         onError: (e) => setErr(e instanceof ApiError ? (e.fields.comment ?? e.message) : 'Something went wrong.'),
       },
     )
