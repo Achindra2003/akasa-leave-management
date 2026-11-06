@@ -25,7 +25,7 @@ COPY --from=deps /opt/venv /opt/venv
 COPY backend/ ./
 COPY --from=web /web/dist ./static
 # Defensive: strip CRLF in case the source was checked out/zipped on Windows.
-RUN sed -i 's/$//' docker-entrypoint.sh && chmod +x docker-entrypoint.sh && chown -R app:app /app
+RUN sed -i 's/\r$//' docker-entrypoint.sh && chmod +x docker-entrypoint.sh && chown -R app:app /app
 USER app
 EXPOSE 8000
 HEALTHCHECK --interval=15s --timeout=3s --start-period=20s --retries=3 \
