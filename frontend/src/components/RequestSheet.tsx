@@ -25,6 +25,8 @@ export function RequestSheet({ id, onClose }: { id: number | null; onClose: () =
         <Dialog.Overlay className="fixed inset-0 z-40 bg-ink/30 backdrop-blur-[2px] data-[state=open]:animate-[fade-in_200ms_ease-out]" />
         <Dialog.Content
           aria-describedby={undefined}
+          onOpenAutoFocus={(e) => { e.preventDefault(); (e.currentTarget as HTMLElement).focus() }}
+          tabIndex={-1}
           className="fixed inset-y-0 right-0 z-50 flex w-full max-w-[560px] flex-col bg-sky shadow-float outline-none data-[state=open]:animate-[sheet-in_260ms_var(--ease-out-quint)] sm:inset-y-2 sm:right-2 sm:rounded-[var(--radius-sheet)]"
         >
           {id != null && <SheetBody id={id} onClose={onClose} />}
@@ -129,6 +131,15 @@ function ActionPanel({ leave, onDone }: { leave: LeaveDetail; onDone: (a: Action
 
   const employeeView = leave.allowedActions.includes('RESPOND') || (leave.allowedActions.length === 1 && leave.allowedActions[0] === 'CANCEL')
   const primary = leave.allowedActions.filter((a) => a !== 'CANCEL')
+
+  if (leave.allowedActions.length === 1 && leave.allowedActions[0] === 'CANCEL') {
+    return (
+      <section className="flex items-center justify-between gap-3 rounded-[var(--radius-card)] bg-cloud px-5 py-3.5 shadow-lift">
+        <p className="text-[13px] text-ink-2">Plans changed? You can withdraw until it's decided.</p>
+        <ConfirmButton className="shrink-0 text-hold hover:bg-hold-wash hover:text-hold" label="Withdraw" confirmLabel="Withdraw?" loading={mutate.isPending} onConfirm={() => run('CANCEL')} />
+      </section>
+    )
+  }
 
   return (
     <section className="rounded-[var(--radius-card)] bg-cloud p-5 shadow-lift ring-1 ring-sunrise/20">

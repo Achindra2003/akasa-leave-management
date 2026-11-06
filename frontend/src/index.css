@@ -111,7 +111,7 @@ p { text-wrap: pretty; }
 }
 
 ::selection { background: var(--color-sunrise-wash); color: var(--color-ink); }
-:focus-visible { outline: 2px solid var(--color-sunrise-deep); outline-offset: 2px; border-radius: 6px; }
+:focus-visible { outline: 2px solid var(--color-sunrise-deep); outline-offset: 2px; } /* outline follows each element's own radius */
 .field:focus-visible { outline: none; } /* fields draw their own ring */
 a { text-underline-offset: 3px; }
 

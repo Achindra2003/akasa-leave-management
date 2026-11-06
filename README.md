@@ -192,6 +192,7 @@ Tests run against **real Postgres, not SQLite**. The overlap guarantee, row vers
 | [`docs/RESEARCH.md`](docs/RESEARCH.md) | How production leave systems and HR agents are built (with sources) and what we took from them |
 | [`docs/DECISIONS.md`](docs/DECISIONS.md) | Every key decision: context, options, choice, why, trade-off |
 | [`docs/EVALS.md`](docs/EVALS.md) | Agent eval method and results, including what failed and how it was fixed |
+| [`docs/design-review/DESIGN_REVIEW.md`](docs/design-review/DESIGN_REVIEW.md) | Visual review at 375/768/1280 and the UI quality passes (D-024) |
 | [`docs/AI_USAGE.md`](docs/AI_USAGE.md) | How AI tools were used to *build* this, and where they were wrong |
 | [`docs/WORKLOG.md`](docs/WORKLOG.md) | Timestamped log of the time-boxed build |
 

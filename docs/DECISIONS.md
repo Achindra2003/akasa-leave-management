@@ -236,3 +236,18 @@ Peers see names and dates only, **never reasons** (D-001 privacy).
 - **Popovers** (bell, account) scale from their trigger (`--radix-popover-content-transform-origin`), 180ms ease-out in and 120ms out. The notification *list* itself doesn't animate, because it's opened many times a day.
 - **Hit areas** of 40px or more on icon buttons; hover effects gated behind `(hover: hover)`; `prefers-reduced-motion` respected.
 - **Known compromise:** the delegate picker uses a native `<select>`. It's accessible and mobile-native, but it can't be styled to the token system. A Radix Select would be the polish step.
+
+## D-024 — UI quality passes: every installed design skill, each for one job
+
+Run after the extras, in this order. Each produced concrete, committed changes. None was a rubber stamp:
+| Skill | What it found → what changed |
+|---|---|
+| `impeccable` (audit + craft floor) | **WCAG failures in our own tokens:** `ink-3` 3.75:1 → 5.0:1, white-on-orange buttons 3.0:1 → 5.6:1, placeholders off the 2.1:1 `ink-4`. Banned patterns removed: eyebrow kicker, decorative blur orb and gradient, hero-metric header, a unicode ✓ used as an icon. Themed browser surfaces (selection, caret, `accent-color`, scrollbar, focus) |
+| `design-taste-frontend` | Mostly out of scope (it targets marketing pages, §13). Applied the universal tells: an en-dash placeholder and a second hero-metric block (Approvals) |
+| `web-design-guidelines` (Vercel) | Labels not programmatically associated; **destructive actions with no confirmation** → inline two-step confirm; **no deep links** → URL state (`?request=`, tabs, filters) with one shared sheet; skip link; single `h1`; enabled submits. Deliberate deviation: **sentence case** labels kept app-wide instead of Title Case, because consistency beats a mixed system |
+| `mobile-native` | Safe areas (`viewport-fit=cover` + `env()` on header, sheet and assistant), Android keyboard resizing, long-press selection on controls, horizontal scrollers no longer trigger back-swipe. Real-device verification still pending |
+| `break-ui` | Schema-limit worst-case data through the real API (`e2e/worst_case.py`, kept as a regression fixture): a URL overflowing the sheet, dates splitting at 320px, long job titles squeezing the roster, `day(s)`-style plurals |
+| `find-animation-opportunities` | 4 kept (status/verification/leg state changes settle in, unread badge bump), 4 rejected, and **one existing animation found replaying on every date edit** (coverage cascade) → fixed |
+| `redesign-skill` | Vite's default favicon replaced with the plane mark; meta description; scaffold assets removed |
+| `designer-skills:design-review` | Captured 375/768/1280. Found the global focus ring **reshaping round buttons**, plus 2 mobile composition issues → fixed. See `docs/design-review/DESIGN_REVIEW.md` |
+Not run, deliberately: the other `designer-skills` (brief, tokens, IA, tasks, flow, grill-me) are upfront planning workflows for new work. Their outputs already exist as D-011/D-015/D-023. `animate` was covered by the motion fixes above.

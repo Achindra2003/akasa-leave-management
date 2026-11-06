@@ -82,7 +82,7 @@ export function DateRoute({ from, to, size = 'md' }: { from: string; to: string;
 /** Approval chain as legs of a route. Each leg: pending (outline), cleared (green), etc. */
 export function ApprovalLegs({ leave }: { leave: LeaveDetail }) {
   return (
-    <ol className="flex flex-wrap items-center gap-x-1 gap-y-2">
+    <ol className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-1 sm:gap-y-2">
       <li className="flex items-center gap-2 text-[13px] font-semibold text-ink">
         <span className="grid size-6 place-items-center rounded-full bg-ink text-[11px] text-white">
           <CircleDot className="size-3.5" aria-hidden />
@@ -105,7 +105,7 @@ export function ApprovalLegs({ leave }: { leave: LeaveDetail }) {
         const role = s.approverRole === 'HR_ADMIN' ? 'HR' : s.approverRole === 'HOD' ? 'HOD' : 'Manager'
         return (
           <li key={s.level} className="flex items-center gap-1">
-            <span className="mx-1 h-px w-5 bg-rule-strong sm:w-8" aria-hidden />
+            <span className="mx-1 hidden h-px w-8 bg-rule-strong sm:block" aria-hidden />
             <span key={s.decision} className={clsx('settle grid size-6 place-items-center rounded-full text-[11px] font-bold', tone)}>
               {s.level}
             </span>
