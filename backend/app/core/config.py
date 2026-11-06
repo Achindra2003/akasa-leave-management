@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["http://localhost:5173"]
 
     seed_demo_data: bool = True
+    # "Today" is evaluated in the organisation's timezone, not UTC (an IST user applying at
+    # 00:30 must not be told their leave starts in the past).
+    app_timezone: str = "Asia/Kolkata"
     serve_frontend_dir: str | None = None  # path to built SPA (set in Docker)
 
     # Policy (D-002): data, not code

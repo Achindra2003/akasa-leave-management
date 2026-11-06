@@ -4,11 +4,12 @@ case from DECISIONS.md D-001. All names are fictional; emails use the reserved-s
 
 from __future__ import annotations
 
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core import clock
 from app.core.logging import log
 from app.core.security import hash_password
 from app.domain.enums import Action, Channel, Role
@@ -101,7 +102,7 @@ async def seed(session: AsyncSession) -> bool:
 
     # A few requests so every dashboard has something to show.
     svc = LeaveService(session)
-    today = datetime.now(UTC).date()
+    today = clock.today()
 
     def d(n: int) -> date:
         return today + timedelta(days=n)

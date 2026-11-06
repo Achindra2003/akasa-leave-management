@@ -14,6 +14,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core import clock
 from app.domain.enums import Action, Channel, LeaveStatus, Role, StepDecision
 from app.domain.errors import Forbidden, NotFound, OverlappingLeave, StaleRequest, ValidationFailed
 from app.domain.policy import (
@@ -61,7 +62,7 @@ class LeaveService:
     today: date | None = None  # injectable clock for tests
 
     def _today(self) -> date:
-        return self.today or datetime.now(UTC).date()
+        return self.today or clock.today()
 
     # ------------------------------------------------------------------ queries
     def _detail_query(self) -> Select[tuple[LeaveRequest]]:

@@ -89,7 +89,8 @@ def parse_dates(text: str, today: date) -> tuple[date | None, date | None]:
 
 
 def parse_reason(text: str) -> str | None:
-    m = re.search(r"\b(?:for|because|reason[:\s]|due to)\s+(.+)$", text, re.IGNORECASE)
+    cleaned = re.sub(r"\bfor\s+\d+\s*days?\b", " ", text, flags=re.IGNORECASE)  # duration
+    m = re.search(r"\b(?:for|because|reason[:\s]|due to)\s+(.+)$", cleaned, re.IGNORECASE)
     if not m:
         return None
     reason = re.sub(r"\s+", " ", m.group(1)).strip(" .")

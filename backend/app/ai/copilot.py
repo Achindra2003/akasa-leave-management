@@ -24,6 +24,7 @@ from langgraph.graph.state import CompiledStateGraph
 from pydantic import BaseModel, Field, ValidationError
 from sqlalchemy import func, select
 
+from app.core import clock
 from app.models import LeaveRequest
 from app.services.leave_service import LeaveService
 
@@ -82,7 +83,7 @@ async def gather_facts(svc: LeaveService, req: LeaveRequest) -> dict[str, Any]:
         "status": req.status.value,
         "requiresDocuments": req.requires_documents,
         "attachments": [a.filename for a in req.attachments],
-        "noticeDays": (req.from_date - datetime.now(UTC).date()).days,
+        "noticeDays": (req.from_date - clock.today()).days,
         "teamOverlaps": [
             {
                 "employeeName": o.employee.name,

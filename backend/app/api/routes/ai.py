@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import time
 import uuid
-from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter
@@ -16,6 +15,7 @@ from pydantic import Field
 from app.ai.copilot import gather_facts
 from app.ai.runtime import ai_runtime
 from app.api.deps import CurrentUser, LeaveServiceDep, SessionDep
+from app.core import clock
 from app.core.config import get_settings
 from app.core.logging import log
 from app.domain.enums import Role
@@ -87,7 +87,7 @@ def _config(user: User, thread_id: str) -> dict[str, Any]:
             "user_id": user.id,  # tools act as this user - never taken from model output
             "user_name": user.name,
             "user_title": user.title,
-            "today": datetime.now(UTC).isoformat(),
+            "today": clock.now().isoformat(),
         },
         "recursion_limit": s.agent_max_steps * 2 + 2,  # each step = agent + tools node
     }
@@ -102,7 +102,7 @@ def _own_thread(user: User, thread_id: str | None) -> str:
 
 
 def _trace(messages: list[BaseMessage]) -> list[dict[str, Any]]:
-    steps: list[dict[str, Any]] = Field(default_factory=list)
+    steps: list[dict[str, Any]] = []
     for m in messages:
         if isinstance(m, AIMessage) and m.tool_calls:
             for tc in m.tool_calls:

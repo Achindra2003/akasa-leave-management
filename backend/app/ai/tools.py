@@ -12,7 +12,7 @@ server, never from model-generated arguments.
 from __future__ import annotations
 
 import json
-from datetime import UTC, date, datetime
+from datetime import date, datetime
 from typing import Any
 
 from langchain_core.runnables import RunnableConfig
@@ -20,6 +20,7 @@ from langchain_core.tools import tool
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import selectinload
 
+from app.core import clock
 from app.core.config import get_settings
 from app.core.db import get_sessionmaker
 from app.domain.errors import DocumentsRequired, DomainError
@@ -39,7 +40,7 @@ async def _user(svc: LeaveService, config: RunnableConfig) -> User:
 
 def _today(config: RunnableConfig) -> date:
     raw = config["configurable"].get("today")
-    return date.fromisoformat(raw) if raw else datetime.now(UTC).date()
+    return datetime.fromisoformat(raw).date() if raw else clock.today()
 
 
 def _out(data: dict[str, Any]) -> str:
