@@ -1,0 +1,55 @@
+name: CI
+on:
+  push: { branches: [main] }
+  pull_request:
+
+concurrency: { group: ci-${{ github.ref }}, cancel-in-progress: true }
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env: { POSTGRES_USER: leave, POSTGRES_PASSWORD: leave, POSTGRES_DB: leave }
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U leave" --health-interval 5s --health-timeout 5s --health-retries 10
+    defaults: { run: { working-directory: backend } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with: { enable-cache: true }
+      - run: uv sync --frozen
+      - name: Lint
+        run: uv run ruff check . && uv run ruff format --check .
+      - name: Tests (unit + integration on real Postgres)
+        run: uv run pytest --cov=app --cov-report=term-missing -q
+      - name: Agent evals (offline golden set)
+        run: uv run python -m evals.run_evals
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: frontend } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: frontend/package-lock.json }
+      - run: npm ci
+      - run: npm run build   # tsc -b (strict) + vite build
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and boot the full stack
+        run: |
+          docker compose up -d --build --wait
+          curl -fsS localhost:8000/ready
+      - name: E2E smoke (headless Chromium)
+        run: |
+          pip install playwright==1.* && python -m playwright install --with-deps chromium
+          python e2e/smoke.py http://localhost:8000 /tmp/shots
+      - if: failure()
+        run: docker compose logs app

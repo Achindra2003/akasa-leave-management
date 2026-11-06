@@ -70,7 +70,8 @@ def parse_dates(text: str, today: date) -> tuple[date | None, date | None]:
         start = today
     elif "next week" in t:
         start = today + timedelta(days=7 - today.weekday())
-    names = [w for w in _WEEKDAYS if w in t]
+    # order by position in the text ("friday to monday"), not calendar order
+    names = sorted((w for w in _WEEKDAYS if w in t), key=t.index)
     if names and start is None:
         idx = _WEEKDAYS.index(names[0])
         delta = (idx - today.weekday()) % 7 or 7

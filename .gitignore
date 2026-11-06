@@ -37,3 +37,4 @@ Thumbs.db
 .idea/
 frontend/openapi.json
 docs/screenshots/failure.png
+backend/evals/results-*.json

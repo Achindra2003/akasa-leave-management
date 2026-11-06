@@ -21,7 +21,7 @@ class Settings(BaseSettings):
 
     jwt_secret: str = Field(default="dev-only-change-me-please-32bytes!!", min_length=32)
     jwt_ttl_minutes: int = 8 * 60
-    cors_origins: list[str] = ["http://localhost:5173"]
+    cors_origins: list[str] = ["http://localhost:5173"]  # SPA is same-origin in prod
 
     seed_demo_data: bool = True
     # "Today" is evaluated in the organisation's timezone, not UTC (an IST user applying at
