@@ -6,7 +6,7 @@ from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import joinedload
 
 from app.core.config import get_settings
 from app.core.db import get_session
@@ -30,9 +30,9 @@ async def get_current_user(
     user = await session.scalar(
         select(User)
         .options(
-            selectinload(User.department),
-            selectinload(User.manager),
-            selectinload(User.delegate),
+            joinedload(User.department),
+            joinedload(User.manager),
+            joinedload(User.delegate),
         )
         .where(User.id == user_id)
     )

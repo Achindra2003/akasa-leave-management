@@ -13,7 +13,7 @@ from datetime import UTC, date, datetime, timedelta
 from sqlalchemy import Select, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import joinedload, selectinload
 
 from app.core import clock
 from app.domain.enums import Action, Channel, LeaveStatus, Role, StepDecision
@@ -70,19 +70,31 @@ class LeaveService:
     session: AsyncSession
     policy: LeavePolicy = field(default_factory=lambda: DEFAULT_POLICY)
     today: date | None = None  # injectable clock for tests
+    _acting_cache: dict[int, set[int]] = field(default_factory=dict)
 
     def _today(self) -> date:
         return self.today or clock.today()
 
     # ------------------------------------------------------------------ queries
     def _detail_query(self) -> Select[tuple[LeaveRequest]]:
+        # Round trips matter more than query count when the DB is far away (D-025):
+        # to-one relations are JOINed into the main query; each collection is one batch.
         return select(LeaveRequest).options(
-            selectinload(LeaveRequest.employee).selectinload(User.department),
-            selectinload(LeaveRequest.steps).selectinload(ApprovalStep.approver),
-            selectinload(LeaveRequest.steps).selectinload(ApprovalStep.acted_by),
-            selectinload(LeaveRequest.blackout),
+            joinedload(LeaveRequest.employee).joinedload(User.department),
+            joinedload(LeaveRequest.blackout),
+            selectinload(LeaveRequest.steps).options(
+                joinedload(ApprovalStep.approver), joinedload(ApprovalStep.acted_by)
+            ),
             selectinload(LeaveRequest.attachments),
-            selectinload(LeaveRequest.comments).selectinload(Comment.author),
+            selectinload(LeaveRequest.comments).joinedload(Comment.author),
+        )
+
+    def _summary_query(self) -> Select[tuple[LeaveRequest]]:
+        """Lists render summaries only: no steps or comments needed."""
+        return select(LeaveRequest).options(
+            joinedload(LeaveRequest.employee).joinedload(User.department),
+            joinedload(LeaveRequest.blackout),
+            selectinload(LeaveRequest.attachments),
         )
 
     async def get(self, request_id: int, viewer: User) -> LeaveRequest:
@@ -94,7 +106,7 @@ class LeaveService:
 
     async def list_mine(self, user: User) -> list[LeaveRequest]:
         q = (
-            self._detail_query()
+            self._summary_query()
             .where(LeaveRequest.employee_id == user.id)
             .order_by(LeaveRequest.from_date.desc(), LeaveRequest.id.desc())
         )
@@ -103,6 +115,9 @@ class LeaveService:
     async def acting_for(self, user: User) -> set[int]:
         """Approvers this user currently stands in for: they named this user as delegate
         AND are on approved leave today (D-020). Computed live - no stale 'OOO' flags."""
+        cached = self._acting_cache.get(user.id)
+        if cached is not None:
+            return cached
         today = self._today()
         q = (
             select(User.id)
@@ -114,14 +129,16 @@ class LeaveService:
                 LeaveRequest.to_date >= today,
             )
         )
-        return set((await self.session.scalars(q)).all())
+        result = set((await self.session.scalars(q)).all())
+        self._acting_cache[user.id] = result
+        return result
 
     async def pending_for(self, approver: User) -> list[LeaveRequest]:
         """Requests whose *current* step is assigned to this approver, or to someone they
         are covering for while that person is on leave."""
         ids = {approver.id} | await self.acting_for(approver)
         q = (
-            self._detail_query()
+            self._summary_query()
             .join(ApprovalStep, ApprovalStep.request_id == LeaveRequest.id)
             .where(
                 ApprovalStep.approver_id.in_(ids),
@@ -137,7 +154,7 @@ class LeaveService:
     async def handled_by(self, approver: User, limit: int = 50) -> list[LeaveRequest]:
         """Requests this approver is/was involved in but are not waiting on them now."""
         q = (
-            self._detail_query()
+            self._summary_query()
             .join(ApprovalStep, ApprovalStep.request_id == LeaveRequest.id)
             .where(
                 ApprovalStep.approver_id == approver.id,
@@ -149,7 +166,7 @@ class LeaveService:
         return list((await self.session.scalars(q)).unique().all())
 
     async def list_all(self, status: LeaveStatus | None = None) -> list[LeaveRequest]:
-        q = self._detail_query().order_by(LeaveRequest.created_at.desc())
+        q = self._summary_query().order_by(LeaveRequest.created_at.desc())
         if status:
             q = q.where(LeaveRequest.status == status)
         return list((await self.session.scalars(q)).all())

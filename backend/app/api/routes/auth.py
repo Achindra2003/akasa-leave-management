@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request
 from sqlalchemy import exists, or_, select
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import joinedload
 
 from app.api.deps import CurrentUser, SessionDep
 from app.api.presenters import user_out
@@ -35,9 +35,9 @@ async def login(body: LoginIn, session: SessionDep, request: Request) -> TokenOu
     user = await session.scalar(
         select(User)
         .options(
-            selectinload(User.department),
-            selectinload(User.manager),
-            selectinload(User.delegate),
+            joinedload(User.department),
+            joinedload(User.manager),
+            joinedload(User.delegate),
         )
         .where(User.email == body.email.lower())
     )

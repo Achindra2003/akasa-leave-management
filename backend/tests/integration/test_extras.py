@@ -211,3 +211,15 @@ async def test_document_text_cannot_inject_a_verdict(client: httpx.AsyncClient, 
     assert check["verdict"] != "consistent"
     detail = (await client.get(f"/leaves/{rid}", headers=org.h("mgr"))).json()
     assert detail["attachments"][0]["verification"] == "PENDING"  # only humans verify
+
+
+async def test_delegate_can_use_copilot_while_covering(client: httpx.AsyncClient, org: Org) -> None:
+    """Regression (found in production verification): delegates could approve but got 403
+    from the co-pilot, because its check ignored delegation."""
+    await client.put("/auth/me/delegate", headers=org.h("mgr"), json={"delegateId": org.ids["lead"]})
+    rid = (await apply(client, org, "emp", 5, 6)).json()["id"]
+    away = (await apply(client, org, "mgr", 0, 1)).json()["id"]
+    await act(client, org, "hod", away, "approve")
+    # lead is not HR and not in the chain: only delegation grants access
+    r = await client.get(f"/ai/copilot/{rid}", headers=org.h("lead"))
+    assert r.status_code == 200, r.text

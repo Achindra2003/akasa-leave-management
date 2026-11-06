@@ -218,7 +218,11 @@ async def copilot(
 ) -> CopilotOut:
     ai_limiter.check(f"user:{user.id}")
     req = await svc.get(request_id, user)
-    is_approver = any(s.approver_id == user.id for s in req.steps)
+    acting = await svc.acting_for(user)
+    is_approver = any(
+        s.approver_id == user.id or s.approver_id in acting or s.acted_by_id == user.id
+        for s in req.steps
+    )
     if not (is_approver or user.role is Role.HR_ADMIN) or req.employee_id == user.id:
         raise Forbidden("The review co-pilot is available to approvers only.")
     facts = await gather_facts(svc, req)
