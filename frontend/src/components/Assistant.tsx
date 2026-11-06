@@ -97,13 +97,13 @@ export function Assistant({ onPrefill }: { onPrefill: (p: Prefill) => void }) {
             )}
             {msgs.map((m, i) => (
               <div key={i} className={clsx('rise', m.role === 'user' && 'flex justify-end')}>
-                <div className={clsx('max-w-[88%] rounded-[var(--radius-card)] px-3.5 py-2.5 text-[14px] whitespace-pre-wrap', m.role === 'user' ? 'bg-ink text-white' : 'bg-haze text-ink')}>
+                <div className={clsx('max-w-[88%] rounded-[var(--radius-card)] px-3.5 py-2.5 text-[14px] whitespace-pre-wrap [overflow-wrap:anywhere]', m.role === 'user' ? 'bg-ink text-white' : 'bg-haze text-ink')}>
                   {m.text.replace(/\*\*/g, '')}
                 </div>
                 {m.out?.draft && <DraftCard out={m.out} busy={busy} onConfirm={confirm} onPrefill={onPrefill} />}
                 {m.out?.steps?.length && (
                   <details className="mt-1 text-[11px] text-ink-3">
-                    <summary className="inline-flex cursor-pointer items-center gap-1"><Wrench className="size-3" /> {(m.out.steps ?? []).filter((s) => s.type === 'tool_call').length} tool call(s)</summary>
+                    <summary className="inline-flex cursor-pointer items-center gap-1"><Wrench className="size-3" /> {(m.out.steps ?? []).filter((s) => s.type === 'tool_call').length} tool {(m.out.steps ?? []).filter((s) => s.type === 'tool_call').length === 1 ? 'call' : 'calls'}</summary>
                     <pre className="mt-1 max-h-40 overflow-auto rounded bg-haze p-2 font-mono text-[10px] whitespace-pre-wrap">
                       {(m.out.steps ?? []).map((s) => `${s.type === 'tool_call' ? '→' : '←'} ${s.tool} ${JSON.stringify(s.type === 'tool_call' ? s.args : s.content).slice(0, 300)}`).join('\n')}
                     </pre>
@@ -133,7 +133,7 @@ function DraftCard({ out, busy, onConfirm, onPrefill }: { out: ChatOut; busy: bo
     <div className="mt-2 rounded-[var(--radius-card)] bg-cloud p-4 shadow-lift ring-1 ring-sunrise/25">
       <div className="mb-2 text-[11px] font-semibold tracking-wide text-sunrise-deep uppercase">Draft · not submitted</div>
       <DateRoute from={d.fromDate} to={d.toDate} />
-      <p className="mt-2 text-[13px] text-ink">{d.reason}</p>
+      <p className="mt-2 text-[13px] text-ink [overflow-wrap:anywhere]">{d.reason}</p>
       <p className="mt-1 text-[12px] text-ink-3 tnum">
         {d.totalDays} {d.totalDays === 1 ? 'day' : 'days'} · goes to {d.approvers.map((a) => a.name).join(' → ')}
       </p>

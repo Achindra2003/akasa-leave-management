@@ -32,7 +32,7 @@ export function CoverageStrip({
       <div
         className="scroll-x flex gap-1 pb-1"
         role="img"
-        aria-label={`Team availability: ${shortInRange.length ? `${shortInRange.length} short-staffed day(s) in your range` : 'fully covered'}`}
+        aria-label={`Team availability: ${shortInRange.length ? `${shortInRange.length} short-staffed ${shortInRange.length === 1 ? 'day' : 'days'} in your range` : 'fully covered'}`}
       >
         {cov.days.map((d, i) => {
           const t = tone(d, cov)

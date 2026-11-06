@@ -207,7 +207,8 @@ class ScriptedLeaveModel(BaseChatModel):
             flags.append(
                 {
                     "level": "medium",
-                    "text": f"{len(overlaps)} teammate(s) off on overlapping dates: {names}.",
+                    "text": f"{len(overlaps)} {'teammate' if len(overlaps) == 1 else 'teammates'}"
+                    f" off on overlapping dates: {names}.",
                 }
             )
         if facts.get("noticeDays", 99) < 2:
@@ -232,7 +233,8 @@ class ScriptedLeaveModel(BaseChatModel):
                 "summary": (
                     f"{facts.get('employeeName', 'The employee')} requests "
                     f"{facts.get('totalDays')} "
-                    f"day(s) ({facts.get('fromDate')} to {facts.get('toDate')}) for: "
+                    f"{'day' if facts.get('totalDays') == 1 else 'days'} "
+                    f"({facts.get('fromDate')} to {facts.get('toDate')}) for: "
                     f'"{facts.get("reason", "")}".'
                 ),
                 "flags": flags,

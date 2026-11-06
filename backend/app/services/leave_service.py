@@ -270,7 +270,7 @@ class LeaveService:
             self.session,
             steps[0].approver_id,
             "approval_needed",
-            f"{employee.name} requested {total} day(s) off",
+            f"{employee.name} requested {total} {'day' if total == 1 else 'days'} off",
             f"{from_date:%d %b} - {to_date:%d %b}{where}",
             req.id,
         )

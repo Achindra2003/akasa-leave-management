@@ -81,7 +81,7 @@ function SheetBody({ id, onClose }: { id: number; onClose: () => void }) {
                   <CalendarRange className="size-3.5" aria-hidden /> In blackout: {d.blackoutName}
                 </div>
               )}
-              <p className="mt-4 rounded-[var(--radius-control)] bg-haze/70 px-3.5 py-3 text-[14px] text-ink">{d.reason}</p>
+              <p className="mt-4 rounded-[var(--radius-control)] bg-haze/70 px-3.5 py-3 text-[14px] text-ink [overflow-wrap:anywhere]">{d.reason}</p>
               <div className="mt-5 border-t border-rule pt-4">
                 <ApprovalLegs leave={d} />
               </div>
@@ -220,7 +220,7 @@ function Conversation({ leave }: { leave: LeaveDetail }) {
             <div className={clsx('mb-0.5 text-[11px] font-semibold', c.authorName === leave.employeeName ? 'text-white/70' : 'text-ink-3')}>
               {c.authorName} {kind[c.kind] ?? ''} · {new Date(c.createdAt).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
             </div>
-            <p className="text-[14px]">{c.body}</p>
+            <p className="text-[14px] [overflow-wrap:anywhere]">{c.body}</p>
           </li>
         ))}
       </ul>
@@ -270,7 +270,7 @@ function TeamCoverage({ leave }: { leave: LeaveDetail }) {
       <div className="mb-3 flex items-baseline justify-between gap-2">
         <h3 className="text-[13px] font-bold text-ink">Team on duty</h3>
         <span className={shortDays.length ? 'text-[12px] font-semibold text-hold' : 'text-[12px] text-cleared'}>
-          {shortDays.length ? `${shortDays.length} short-staffed day(s) if approved` : 'Covered if approved'}
+          {shortDays.length ? `${shortDays.length} short-staffed ${shortDays.length === 1 ? 'day' : 'days'} if approved` : 'Covered if approved'}
         </span>
       </div>
       <CoverageStrip cov={q.data} from={leave.fromDate} to={leave.toDate} blackout={q.data.blackout} />

@@ -52,7 +52,7 @@ export default function Team() {
             <table className="w-full border-separate border-spacing-0 text-[12px]">
               <thead>
                 <tr>
-                  <th className="sticky left-0 z-10 min-w-[160px] bg-cloud px-4 py-2 text-left text-[11px] font-semibold tracking-wide text-ink-3 uppercase">Engineer / crew</th>
+                  <th className="sticky left-0 z-10 min-w-[120px] bg-cloud px-3 py-2 text-left text-[11px] sm:min-w-[160px] sm:px-4 font-semibold tracking-wide text-ink-3 uppercase">Engineer / crew</th>
                   {cov.days.map((d) => {
                     const b = inBlackout(d.date)
                     return (
@@ -67,9 +67,9 @@ export default function Team() {
               <tbody>
                 {rows.map((r) => (
                   <tr key={r.id}>
-                    <th className="sticky left-0 z-10 border-t border-rule bg-cloud px-4 py-2 text-left font-normal">
-                      <div className="truncate text-[13px] font-semibold text-ink">{r.name}</div>
-                      <div className="truncate text-[11px] text-ink-3">{r.title}</div>
+                    <th className="sticky left-0 z-10 border-t border-rule bg-cloud px-3 py-2 text-left font-normal sm:px-4">
+                      <div className="max-w-[104px] truncate text-[13px] font-semibold text-ink sm:max-w-[220px]" title={r.name}>{r.name}</div>
+                      {r.title && <div className="max-w-[104px] truncate text-[11px] text-ink-3 sm:max-w-[220px]" title={r.title}>{r.title}</div>}
                     </th>
                     {r.cells.map((c, i) => {
                       const prev = r.cells[i - 1]

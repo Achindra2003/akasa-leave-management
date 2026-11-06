@@ -56,7 +56,7 @@ export function DateRoute({ from, to, size = 'md' }: { from: string; to: string;
   return (
     <div className="flex items-center gap-2.5">
       <div>
-        <div className={clsx('font-mono font-semibold tracking-tight text-ink tnum', big ? 'text-[22px]' : 'text-[15px]')}>
+        <div className={clsx('font-mono font-semibold tracking-tight whitespace-nowrap text-ink tnum', big ? 'text-[22px]' : 'text-[15px]')}>
           {fmt(from)}
         </div>
         <div className="text-[11px] text-ink-3">{weekday(from)}</div>
@@ -68,7 +68,7 @@ export function DateRoute({ from, to, size = 'md' }: { from: string; to: string;
             <Plane className={clsx(big ? 'size-4' : 'size-3')} aria-hidden />
           </div>
           <div>
-            <div className={clsx('font-mono font-semibold tracking-tight text-ink tnum', big ? 'text-[22px]' : 'text-[15px]')}>
+            <div className={clsx('font-mono font-semibold tracking-tight whitespace-nowrap text-ink tnum', big ? 'text-[22px]' : 'text-[15px]')}>
               {fmt(to)}
             </div>
             <div className="text-[11px] text-ink-3">{weekday(to)}</div>
@@ -140,17 +140,17 @@ export function LeaveRow({
       <DateRoute from={leave.fromDate} to={leave.toDate} />
       <div className="col-span-2 min-w-0 sm:col-span-1">
         {showEmployee && (
-          <div className="truncate text-[14px] font-semibold text-ink">
+          <div className="truncate text-[14px] font-semibold text-ink" title={leave.employeeName}>
             {leave.employeeName}
             {leave.department && <span className="font-normal text-ink-3"> · {leave.department}</span>}
           </div>
         )}
-        <div className={clsx('truncate', showEmployee ? 'text-[13px] text-ink-2' : 'text-[14px] text-ink')}>
+        <div title={leave.reason} className={clsx('truncate', showEmployee ? 'text-[13px] text-ink-2' : 'text-[14px] text-ink')}>
           {leave.reason}
         </div>
         <div className="mt-0.5 flex items-center gap-3 text-[12px] text-ink-3">
           <span className="tnum font-mono">#{String(leave.id).padStart(4, '0')}</span>
-          <span className="tnum">
+          <span className="tnum whitespace-nowrap">
             {leave.totalDays} {leave.totalDays === 1 ? 'day' : 'days'}
           </span>
           {leave.attachmentCount > 0 && (
